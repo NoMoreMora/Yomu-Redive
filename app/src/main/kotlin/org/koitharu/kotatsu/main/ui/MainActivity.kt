@@ -56,6 +56,7 @@ import org.koitharu.kotatsu.core.prefs.NavItem
 import org.koitharu.kotatsu.core.ui.BaseActivity
 import org.koitharu.kotatsu.core.ui.util.FadingAppbarMediator
 import org.koitharu.kotatsu.core.ui.util.MenuInvalidator
+import org.koitharu.kotatsu.core.ui.widgets.FloatingBottomNavigationView
 import org.koitharu.kotatsu.core.ui.widgets.SlidingBottomNavigationView
 import org.koitharu.kotatsu.core.util.ext.consume
 import org.koitharu.kotatsu.core.util.ext.end
@@ -115,6 +116,9 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), AppBarOwner, BottomNav
 
 		viewBinding.fab?.setOnClickListener(this)
 		viewBinding.navRail?.headerView?.findViewById<View>(R.id.railFab)?.setOnClickListener(this)
+		(viewBinding.bottomNav as? FloatingBottomNavigationView)?.setOnContinueClickListener {
+			viewModel.openLastReader()
+		}
 		fadingAppbarMediator =
 			FadingAppbarMediator(viewBinding.appbar, viewBinding.layoutSearch ?: viewBinding.searchBar)
 
@@ -206,13 +210,15 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), AppBarOwner, BottomNav
 		viewBinding.bottomNav?.let { nav ->
 			val isFloating = settings.isFloatingNavBar
 			if (isFloating) {
+				// The Compose face draws and centres its own pill, including its horizontal padding
+				// and shadow, so this view only has to span the width and clear the system bars.
 				nav.updatePadding(left = barsInsets.left, right = barsInsets.right, bottom = 0)
 				nav.updateLayoutParams<MarginLayoutParams> {
-					marginStart = resources.getDimensionPixelOffset(R.dimen.margin_normal)
-					marginEnd = resources.getDimensionPixelOffset(R.dimen.margin_normal)
-					bottomMargin = barsInsets.bottom + resources.getDimensionPixelOffset(R.dimen.margin_normal)
+					marginStart = 0
+					marginEnd = 0
+					bottomMargin = barsInsets.bottom + resources.getDimensionPixelOffset(R.dimen.margin_small)
 				}
-				nav.elevation = 6f * resources.displayMetrics.density
+				nav.elevation = 0f
 			} else {
 				nav.updatePadding(left = barsInsets.left, right = barsInsets.right, bottom = barsInsets.bottom)
 				nav.updateLayoutParams<MarginLayoutParams> {
@@ -343,8 +349,17 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), AppBarOwner, BottomNav
 		isSearchOpened: Boolean = viewBinding.searchView.isShowing,
 	) {
 		navigationDelegate.navRailHeader?.railFab?.isVisible = isResumeEnabled
+		val shouldShowResume = isResumeEnabled &&
+			!actionModeDelegate.isActionModeStarted &&
+			!isSearchOpened &&
+			topFragment is HistoryListFragment
+		// The floating bar carries its own round continue button beside the pill, so the layout's
+		// extended FAB stays hidden while that face is in use.
+		val floatingNav = viewBinding.bottomNav as? FloatingBottomNavigationView
+		val isComposeNav = floatingNav != null && settings.isFloatingNavBar
+		floatingNav?.setContinueVisible(shouldShowResume && isComposeNav)
 		val fab = viewBinding.fab ?: return
-		if (isResumeEnabled && !actionModeDelegate.isActionModeStarted && !isSearchOpened && topFragment is HistoryListFragment) {
+		if (shouldShowResume && !isComposeNav) {
 			if (!fab.isVisible) {
 				fab.show()
 			}

@@ -1,6 +1,7 @@
 package org.koitharu.kotatsu.tracker.domain
 
 import android.content.Context
+import android.util.Log
 import androidx.annotation.VisibleForTesting
 import androidx.room.withTransaction
 import dagger.Reusable
@@ -103,6 +104,11 @@ class TrackingRepository @Inject constructor(
 			for (item in window) {
 				val manga = item.manga.toManga(emptySet(), null)
 				if (isUpdateCheckingDisabled(manga)) {
+					Log.i(
+						TAG,
+						"getTracks: [${manga.id}] \"${manga.title}\" skipped: " +
+							"update checking disabled for source ${manga.source.name}",
+					)
 					continue
 				}
 				result.add(
@@ -119,6 +125,13 @@ class TrackingRepository @Inject constructor(
 				}
 			}
 		}
+		Log.i(
+			TAG,
+			"getTracks: collected ${result.size} of ${if (limit == Int.MAX_VALUE) "all" else limit} requested, " +
+				"scanned ${currentOffset - offset} eligible row(s), " +
+				"total tracks in db: ${db.getTracksDao().getTracksCount()}, " +
+				"minActivityTime=${minActivityTime.toInstantOrNull()}, staleCheckTime=${staleCheckTime.toInstantOrNull()}",
+		)
 		return result
 	}
 
@@ -239,12 +252,19 @@ class TrackingRepository @Inject constructor(
 		dao.gc()
 		val ids = dao.findAllIds().toMutableSet()
 		val size = ids.size
+		var addedFromHistory = 0
+		var addedFromFavourites = 0
+		// A manga can be tracked by both history and favourites: once the history pass has
+		// handled an id, the favourites pass must not touch it — recreating the row would
+		// wipe its baseline (lastChapterId), silently resetting the track on every run.
+		val handled = HashSet<Long>(size)
 		// history
 		if (AppSettings.TRACK_HISTORY in settings.trackSources) {
 			val historyIds = db.getHistoryDao().findAllIds()
 			for (mangaId in historyIds) {
-				if (!ids.remove(mangaId)) {
+				if (handled.add(mangaId) && !ids.remove(mangaId)) {
 					dao.upsert(TrackEntity.create(mangaId))
+					addedFromHistory++
 				}
 			}
 		}
@@ -252,14 +272,24 @@ class TrackingRepository @Inject constructor(
 		if (AppSettings.TRACK_FAVOURITES in settings.trackSources) {
 			val favoritesIds = db.getFavouritesDao().findIdsWithTrack()
 			for (mangaId in favoritesIds) {
-				if (!ids.remove(mangaId)) {
+				if (handled.add(mangaId) && !ids.remove(mangaId)) {
 					dao.upsert(TrackEntity.create(mangaId))
+					addedFromFavourites++
 				}
 			}
 		}
 		// remove unused
 		for (mangaId in ids) {
 			dao.delete(mangaId)
+		}
+		if (addedFromHistory != 0 || addedFromFavourites != 0 || ids.isNotEmpty()) {
+			Log.i(
+				TAG,
+				"updateTracks: existing=$size, +history=$addedFromHistory, +favourites=$addedFromFavourites, " +
+					"removed=${ids.size}" +
+					(if (ids.isEmpty()) "" else " (ids: ${ids.take(REMOVED_IDS_LOG_LIMIT)})") +
+					" trackSources=${settings.trackSources}",
+			)
 		}
 		size - ids.size
 	}
@@ -309,6 +339,8 @@ class TrackingRepository @Inject constructor(
 
 	private companion object {
 
+		const val TAG = "Tracker"
 		const val MAX_STALE_UPDATE_DAYS = 90L
+		const val REMOVED_IDS_LOG_LIMIT = 20
 	}
 }

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -45,6 +46,7 @@ class CaptchaAutoResolveCoordinator @Inject constructor(
 	private val stateMutex = Mutex()
 	private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 	private val recentSuccessAt = ConcurrentHashMap<MangaSource, Long>()
+	private val recentFailureAt = ConcurrentHashMap<MangaSource, Long>()
 	private val mainHandler = Handler(Looper.getMainLooper())
 	private val reorderPending = AtomicBoolean(false)
 
@@ -95,27 +97,55 @@ class CaptchaAutoResolveCoordinator @Inject constructor(
 	): T {
 		activeSession?.result?.await()
 		var retryCount = 0
+		var didVerify = false
 		while (true) {
 			try {
 				return block()
 			} catch (e: Exception) {
 				val cf = e.findCloudFlareException()
-				if (
-					cf !is CloudFlareProtectedException ||
-					!mayStartVerification ||
-					retryCount++ >= MAX_REQUEST_RETRIES ||
-					!resolveIfEnabled(cf)
-				) throw e
+				if (cf !is CloudFlareProtectedException || !mayStartVerification) throw e
+				if (didVerify) {
+					// Verification reported success and this request is *still* Cloudflare-protected.
+					// Another identical session cannot fix that, so stop asking for one.
+					notifyVerificationIneffective(cf.source)
+					throw e
+				}
+				if (retryCount++ >= MAX_REQUEST_RETRIES || !resolveIfEnabled(cf)) throw e
+				didVerify = true
 			}
 		}
+	}
+
+	/**
+	 * Reports that verification which finished successfully did not actually unblock [source].
+	 *
+	 * The solver WebView passing the challenge while the parser's OkHttp request stays blocked means
+	 * Cloudflare is not honouring the clearance for that request — a fingerprint mismatch between the
+	 * two HTTP stacks, not something a repeat session can resolve. Without this the app solves the same
+	 * challenge, succeeds, gets blocked again, and re-solves once [RECENT_SUCCESS_COOLDOWN_MS] lapses,
+	 * forever: the challenge page opens fully every time and the loop still never ends.
+	 */
+	fun notifyVerificationIneffective(source: MangaSource) {
+		Log.w(TAG, "Verification succeeded but $source is still protected; suppressing auto-resolve")
+		recentSuccessAt.remove(source)
+		recentFailureAt[source] = System.currentTimeMillis()
 	}
 
 	/** Resolves [exception] only when automatic solving is enabled for its source. */
 	suspend fun resolveIfEnabled(exception: CloudFlareProtectedException): Boolean {
 		if (SourceSettings(context, exception.source).isCaptchaAutoResolveDisabled) return false
+		val now = System.currentTimeMillis()
 		val lastSuccess = recentSuccessAt[exception.source]
-		if (lastSuccess != null && System.currentTimeMillis() - lastSuccess < RECENT_SUCCESS_COOLDOWN_MS) {
+		if (lastSuccess != null && now - lastSuccess < RECENT_SUCCESS_COOLDOWN_MS) {
 			return true
+		}
+		// A source whose challenge just failed must not spawn a solver Activity for every following
+		// request: one unsolvable challenge would otherwise become an app-wide verification loop, with
+		// the tracker and every open screen re-launching it back to back. Report "not resolved" instead
+		// so the caller falls back to the ordinary captcha state, which offers a single manual "Solve".
+		val lastFailure = recentFailureAt[exception.source]
+		if (lastFailure != null && now - lastFailure < RECENT_FAILURE_COOLDOWN_MS) {
+			return false
 		}
 		return resolve(exception.source, exception)
 	}
@@ -146,10 +176,22 @@ class CaptchaAutoResolveCoordinator @Inject constructor(
 		try {
 			launch(session)
 			success = session.activityResult.await()
-			if (success) recentSuccessAt[session.source] = System.currentTimeMillis()
 		} catch (e: Throwable) {
 			e.printStackTraceDebug()
 		} finally {
+			Log.i(
+				TAG,
+				"Session for ${session.source} finished: success=$success" +
+					(if (session.isCancelledByBackground) " (cancelled by backgrounding)" else ""),
+			)
+			if (success) {
+				recentSuccessAt[session.source] = System.currentTimeMillis()
+				recentFailureAt.remove(session.source)
+			} else if (!session.isCancelledByBackground) {
+				// Backgrounding is the user's choice, not a verdict on the challenge, so it must not
+				// arm the cooldown.
+				recentFailureAt[session.source] = System.currentTimeMillis()
+			}
 			stateMutex.withLock {
 				if (activeSession === session) activeSession = null
 			}
@@ -198,6 +240,7 @@ class CaptchaAutoResolveCoordinator @Inject constructor(
 	/** App backgrounding cancels the one session and therefore releases every waiter with failure. */
 	override fun onStop(owner: LifecycleOwner) {
 		val session = activeSession ?: return
+		session.isCancelledByBackground = true
 		session.activityResult.complete(false)
 		mainHandler.post {
 			hiddenActivityRef?.get()?.cancelAutomaticResolve()
@@ -210,12 +253,15 @@ class CaptchaAutoResolveCoordinator @Inject constructor(
 		}
 	}
 
-	private data class ResolveSession(
+	private class ResolveSession(
 		val source: MangaSource,
 		val exception: CloudFlareProtectedException,
 		val activityResult: CompletableDeferred<Boolean>,
 		val result: CompletableDeferred<Boolean>,
-	)
+	) {
+		@Volatile
+		var isCancelledByBackground = false
+	}
 
 	private data class SessionClaim(
 		val session: ResolveSession,
@@ -223,7 +269,9 @@ class CaptchaAutoResolveCoordinator @Inject constructor(
 	)
 
 	private companion object {
+		const val TAG = "CaptchaCoordinator"
 		const val RECENT_SUCCESS_COOLDOWN_MS = 30_000L
+		const val RECENT_FAILURE_COOLDOWN_MS = 3 * 60_000L
 		const val MAX_REQUEST_RETRIES = 2
 	}
 }
