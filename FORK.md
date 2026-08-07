@@ -183,3 +183,33 @@ To cut a release:
    (e.g. `9.8.2`, matching the existing tag style), write the notes (they surface in the in-app
    changelog), and **upload the signed APK as a release asset**. Installed apps pick it up on their
    next update check.
+
+### Stable vs development update channels
+
+Settings → About → **Update channel** (`update_channel` pref, backing `AppSettings.isUnstableUpdatesAllowed`)
+lets a user pick **Stable** or **Development**:
+
+- **Stable** (default) — the updater only offers releases whose version has no `-suffix`
+  (`9.8.2`, `9.8.3`, …).
+- **Development** — it also offers pre-release builds, i.e. releases whose tag carries a suffix
+  (`9.8.3-beta1`). `VersionId` treats a suffix as a pre-release sorting just below the same base
+  number, so a `9.8.3-beta1` supersedes `9.8.2` and is itself superseded by the final `9.8.3`.
+
+To publish a development build, build the release variant with a suffix and mark the GitHub Release
+as a pre-release:
+
+```
+./gradlew assembleRelease -PversionSuffix=-beta1     # -> 9.8.3-beta1 (needs the base bumped to 9.8.3)
+```
+
+### Fast local install while testing
+
+For iterating on a device/emulator, skip GitHub entirely and install straight over adb:
+
+```
+./gradlew installDebug      # builds + installs the .debug app (io.github.yomuredive.yomu.debug)
+```
+
+The debug build installs **side-by-side** with a release install (different applicationId), so you
+can keep a stable copy and a dev copy on the same device. `installRelease` / `installNightly` install
+those variants instead (release needs the signing config from `keystore.properties`).

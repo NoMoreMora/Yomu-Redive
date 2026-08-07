@@ -333,7 +333,7 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 		get() = prefs.getBoolean(KEY_SHORTCUTS, true)
 
 	val isUnstableUpdatesAllowed: Boolean
-		get() = prefs.getBoolean(KEY_UPDATES_UNSTABLE, false)
+		get() = prefs.getString(KEY_UPDATE_CHANNEL, VALUE_UPDATE_CHANNEL_STABLE) == VALUE_UPDATE_CHANNEL_DEV
 
 	val isPagesTabEnabled: Boolean
 		get() = prefs.getBoolean(KEY_PAGES_TAB, true)
@@ -886,6 +886,9 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 		const val KEY_APP_LOCALE = "app_locale"
 		const val KEY_SOURCES_GRID = "sources_grid"
 		const val KEY_UPDATES_UNSTABLE = "updates_unstable"
+		const val KEY_UPDATE_CHANNEL = "update_channel"
+		const val VALUE_UPDATE_CHANNEL_STABLE = "stable"
+		const val VALUE_UPDATE_CHANNEL_DEV = "dev"
 		const val KEY_TIPS_CLOSED = "tips_closed"
 		const val KEY_SSL_BYPASS = "ssl_bypass"
 		const val KEY_READER_AUTOSCROLL_SPEED = "as_speed"

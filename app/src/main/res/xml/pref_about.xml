@@ -10,12 +10,14 @@
 		android:persistent="false"
 		android:summary="@string/check_for_updates" />
 
-	<SwitchPreferenceCompat
-		android:defaultValue="false"
+	<ListPreference
+		android:defaultValue="stable"
+		android:entries="@array/update_channels"
+		android:entryValues="@array/update_channel_values"
 		android:icon="@drawable/ic_app_update"
-		android:key="updates_unstable"
-		android:summary="@string/allow_unstable_updates_summary"
-		android:title="@string/allow_unstable_updates" />
+		android:key="update_channel"
+		android:title="@string/update_channel"
+		app:useSimpleSummaryProvider="true" />
 
 	<Preference
 		android:fragment="org.koitharu.kotatsu.settings.about.changelog.ChangelogFragment"
