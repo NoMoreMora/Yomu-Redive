@@ -31,11 +31,21 @@ class AlternativesUseCase @Inject constructor(
 	private val presetsRepository: SourcePresetsRepository,
 ) {
 
-	suspend operator fun invoke(manga: Manga, throughDisabledSources: Boolean): Flow<Manga> {
-		val sources = getSources(manga.source, throughDisabledSources)
+	suspend operator fun invoke(
+		manga: Manga,
+		throughDisabledSources: Boolean,
+		targetSource: MangaSource? = null,
+		query: String? = null,
+	): Flow<Manga> {
+		val sources = if (targetSource != null) {
+			listOf(targetSource)
+		} else {
+			getSources(manga.source, throughDisabledSources)
+		}
 		if (sources.isEmpty()) {
 			return emptyFlow()
 		}
+		val searchQuery = query?.takeIf { it.isNotBlank() } ?: manga.title
 		val semaphore = Semaphore(MAX_PARALLELISM)
 		return channelFlow {
 			for (source in sources) {
@@ -43,7 +53,7 @@ class AlternativesUseCase @Inject constructor(
 					val searchHelper = searchHelperFactory.create(source)
 					val list = runCatchingCancellable {
 						semaphore.withPermit {
-							searchHelper(manga.title, SearchKind.TITLE)?.manga
+							searchHelper(searchQuery, SearchKind.TITLE)?.manga
 						}
 					}.getOrNull()
 					list?.forEach { m ->

@@ -25,6 +25,7 @@ import org.koitharu.kotatsu.core.util.ext.MutableEventFlow
 import org.koitharu.kotatsu.core.util.ext.append
 import org.koitharu.kotatsu.core.util.ext.call
 import org.koitharu.kotatsu.core.util.ext.require
+import org.koitharu.kotatsu.explore.data.MangaSourcesRepository
 import org.koitharu.kotatsu.list.domain.MangaListMapper
 import org.koitharu.kotatsu.list.ui.model.ButtonFooter
 import org.koitharu.kotatsu.list.ui.model.EmptyState
@@ -33,6 +34,7 @@ import org.koitharu.kotatsu.list.ui.model.LoadingFooter
 import org.koitharu.kotatsu.list.ui.model.LoadingState
 import org.koitharu.kotatsu.list.ui.model.MangaGridModel
 import org.koitharu.kotatsu.parsers.model.Manga
+import org.koitharu.kotatsu.parsers.model.MangaSource
 import org.koitharu.kotatsu.parsers.util.suspendlazy.getOrDefault
 import org.koitharu.kotatsu.parsers.util.suspendlazy.suspendLazy
 import javax.inject.Inject
@@ -44,9 +46,18 @@ class AlternativesViewModel @Inject constructor(
 	private val alternativesUseCase: AlternativesUseCase,
 	private val migrateUseCase: MigrateUseCase,
 	private val mangaListMapper: MangaListMapper,
+	private val sourcesRepository: MangaSourcesRepository,
 ) : BaseViewModel() {
 
 	val manga = savedStateHandle.require<ParcelableManga>(AppRouter.KEY_MANGA).manga
+
+	private val _targetSource = MutableStateFlow<MangaSource?>(
+		savedStateHandle.get<String>(AppRouter.KEY_SOURCE)?.let { name ->
+			sourcesRepository.allMangaSources.firstOrNull { it.name == name }
+		},
+	)
+	val targetSource: StateFlow<MangaSource?> = _targetSource
+	private val query = MutableStateFlow<String?>(null)
 
 	private var includeDisabledSources = MutableStateFlow(false)
 	private val results = MutableStateFlow<List<MangaAlternativeModel>>(emptyList())
@@ -117,13 +128,45 @@ class AlternativesViewModel @Inject constructor(
 		}
 	}
 
+	fun copy(target: Manga) {
+		if (migrationJob?.isActive == true) {
+			return
+		}
+		migrationJob = launchLoadingJob(Dispatchers.Default) {
+			migrateUseCase(manga, target, copy = true)
+			onMigrated.call(target)
+		}
+	}
+
+	fun setTargetSource(source: MangaSource?) {
+		if (_targetSource.value == source) {
+			return
+		}
+		_targetSource.value = source
+		restartSearch()
+	}
+
+	fun manualSearch(text: String) {
+		query.value = text.trim().takeIf { it.isNotEmpty() }
+		restartSearch()
+	}
+
+	suspend fun getAvailableSources(): List<MangaSource> = sourcesRepository.getEnabledSources()
+
+	private fun restartSearch() {
+		searchJob?.cancel()
+		results.value = emptyList()
+		includeDisabledSources.value = false
+		doSearch(throughDisabledSources = false)
+	}
+
 	private fun doSearch(throughDisabledSources: Boolean) {
 		val prevJob = searchJob
 		searchJob = launchLoadingJob(Dispatchers.Default) {
 			prevJob?.cancelAndJoin()
 			val ref = mangaDetails.getOrDefault(manga)
 			val refCount = ref.chaptersCount()
-			alternativesUseCase.invoke(ref, throughDisabledSources)
+			alternativesUseCase.invoke(ref, throughDisabledSources, _targetSource.value, query.value)
 				.collect {
 					val model = MangaAlternativeModel(
 						mangaModel = mangaListMapper.toListModel(it, ListMode.GRID) as MangaGridModel,

@@ -91,13 +91,23 @@ This is the focus of the fork. Existing upstream foldable support lives in
   welcome screen or adding sources from the catalog.
 - _Debug/nightly variant names_ (`src/debug`, `src/nightly` `strings.xml`): rebranded from
   "Kotatsu Dev" / "Kotatsu Nightly" to "Yomu-Re:dive Dev" / "Yomu-Re:dive Nightly".
-- _Multi-select "Find similar" in Favourites_ (`res/menu/mode_favourites.xml`,
-  `FavouritesListFragment.kt`, `AppRouter.openRelated(Collection<Manga>)`,
-  `RelatedListViewModel.kt`): the favourites selection action-mode gained a **Find similar**
-  action. It opens the Related screen seeded by every selected manga — fetching related titles
-  per source concurrently, then merging and de-duplicating (excluding the selected seeds) — so
-  you can find manga similar to a whole set of favourites at once instead of one at a time. The
-  single-manga Related entry point (from a title's details) is unchanged.
+- _"Find similar" → manga migration_ (`alternatives/*`, `favourites/ui/list/FavouritesListFragment.kt`,
+  `core/nav/AppRouter.kt`, `res/menu/opt_migration.xml`): the favourites selection **Find similar**
+  action now opens the migration screen (per-manga; single selection only) instead of the Related
+  list. Modeled on TachiyomiSY's source migration, the screen now:
+  - **auto-matches on a chosen target source** — `AlternativesUseCase` gained `targetSource`/`query`
+    params; a **Select source** menu item restricts the fuzzy-title search to one source (or "All
+    sources"). `AppRouter.openAlternatives(manga, source?)` can pre-select the source.
+  - **manual match** — a **Search manually** menu item re-runs the search with a typed title against
+    the selected source.
+  - **Migrate vs Copy** — the migrate confirm dialog gained a **Copy** button. `MigrateUseCase` gained
+    a `copy` flag: `copy=false` (Migrate) moves favourites/history/tracking/scrobbling to the new
+    manga and removes the original; `copy=true` (Copy) duplicates favourites + history onto the new
+    manga and leaves the original (and its tracking) intact.
+
+  _Known gap (follow-up):_ page-level **bookmarks** and per-manga reader prefs are still not carried
+  across a migration — doing it meaningfully needs chapter-number matching (bookmarks reference the
+  old source's chapter/page ids), so it was deliberately deferred rather than blindly re-keyed.
 
 ## Build environment notes
 

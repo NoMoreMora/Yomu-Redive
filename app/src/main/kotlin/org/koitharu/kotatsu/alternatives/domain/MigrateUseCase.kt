@@ -26,9 +26,15 @@ constructor(
 	private val progressUpdateUseCase: ProgressUpdateUseCase,
 	private val scrobblers: Set<@JvmSuppressWildcards Scrobbler>,
 ) {
+	/**
+	 * @param copy when `true`, the original manga is kept (favourites and history are duplicated
+	 * onto [newManga] instead of moved, and tracking/scrobbling are left on the original).
+	 * When `false` (default) the original is replaced: its data is moved to [newManga].
+	 */
 	suspend operator fun invoke(
 		oldManga: Manga,
 		newManga: Manga,
+		copy: Boolean = false,
 	) {
 		val oldDetails = if (oldManga.chapters.isNullOrEmpty()) {
 			runCatchingCancellable {
@@ -48,7 +54,9 @@ constructor(
 			val favoritesDao = database.getFavouritesDao()
 			val oldFavourites = favoritesDao.findAllRaw(oldDetails.id)
 			if (oldFavourites.isNotEmpty()) {
-				favoritesDao.delete(oldManga.id)
+				if (!copy) {
+					favoritesDao.delete(oldManga.id)
+				}
 				for (f in oldFavourites) {
 					val e =
 						f.copy(
@@ -63,7 +71,9 @@ constructor(
 			val newHistory =
 				if (oldHistory != null) {
 					val newHistory = makeNewHistory(oldDetails, newDetails, oldHistory)
-					historyDao.delete(oldDetails.id)
+					if (!copy) {
+						historyDao.delete(oldDetails.id)
+					}
 					historyDao.upsert(newHistory)
 					newHistory
 				} else {
@@ -72,7 +82,7 @@ constructor(
 			// track
 			val tracksDao = database.getTracksDao()
 			val oldTrack = tracksDao.find(oldDetails.id)
-			if (oldTrack != null) {
+			if (!copy && oldTrack != null) {
 				val lastChapter = newDetails.chapters?.lastOrNull()
 				val newTrack =
 					TrackEntity(
@@ -87,8 +97,11 @@ constructor(
 				tracksDao.delete(oldDetails.id)
 				tracksDao.upsert(newTrack)
 			}
-			// scrobbling
+			// scrobbling (left on the original when copying)
 			for (scrobbler in scrobblers) {
+				if (copy) {
+					break
+				}
 				if (!scrobbler.isEnabled) {
 					continue
 				}

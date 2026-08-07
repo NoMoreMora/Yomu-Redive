@@ -1,13 +1,20 @@
 package org.koitharu.kotatsu.alternatives.ui
 
 import android.os.Bundle
+import android.text.InputType
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.core.view.MenuProvider
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import androidx.lifecycle.lifecycleScope
 import coil3.ImageLoader
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import org.koitharu.kotatsu.R
 import org.koitharu.kotatsu.core.exceptions.resolve.SnackbarErrorObserver
 import org.koitharu.kotatsu.core.model.getTitle
@@ -15,6 +22,7 @@ import org.koitharu.kotatsu.core.nav.router
 import org.koitharu.kotatsu.core.ui.BaseActivity
 import org.koitharu.kotatsu.core.ui.BaseListAdapter
 import org.koitharu.kotatsu.core.ui.dialog.buildAlertDialog
+import org.koitharu.kotatsu.core.ui.dialog.setEditText
 import org.koitharu.kotatsu.core.ui.list.OnListItemClickListener
 import org.koitharu.kotatsu.core.util.ext.consumeAllSystemBarsInsets
 import org.koitharu.kotatsu.core.util.ext.observe
@@ -68,6 +76,28 @@ class AlternativesActivity : BaseActivity<ActivityAlternativesBinding>(),
 			router.openDetails(it)
 			finishAfterTransition()
 		}
+		viewModel.targetSource.observe(this) { source ->
+			supportActionBar?.subtitle = source?.getTitle(this) ?: viewModel.manga.title
+		}
+		addMenuProvider(object : MenuProvider {
+			override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+				menuInflater.inflate(R.menu.opt_migration, menu)
+			}
+
+			override fun onMenuItemSelected(menuItem: MenuItem): Boolean = when (menuItem.itemId) {
+				R.id.action_search -> {
+					showManualSearchDialog()
+					true
+				}
+
+				R.id.action_source -> {
+					showSourcePickerDialog()
+					true
+				}
+
+				else -> false
+			}
+		})
 	}
 
 	override fun onApplyWindowInsets(
@@ -116,9 +146,45 @@ class AlternativesActivity : BaseActivity<ActivityAlternativesBinding>(),
 				),
 			)
 			setNegativeButton(android.R.string.cancel, null)
+			setNeutralButton(android.R.string.copy) { _, _ ->
+				viewModel.copy(target)
+			}
 			setPositiveButton(R.string.migrate) { _, _ ->
 				viewModel.migrate(target)
 			}
 		}.show()
+	}
+
+	private fun showManualSearchDialog() {
+		buildAlertDialog(this) {
+			setTitle(R.string.search_manually)
+			val editText = setEditText(InputType.TYPE_CLASS_TEXT, singleLine = true)
+			editText.setText(viewModel.manga.title)
+			editText.setSelection(editText.text?.length ?: 0)
+			setNegativeButton(android.R.string.cancel, null)
+			setPositiveButton(R.string.search) { _, _ ->
+				viewModel.manualSearch(editText.text?.toString().orEmpty())
+			}
+		}.show()
+	}
+
+	private fun showSourcePickerDialog() {
+		lifecycleScope.launch {
+			val sources = viewModel.getAvailableSources()
+			val labels = buildList {
+				add(getString(R.string.all_sources))
+				sources.forEach { add(it.getTitle(this@AlternativesActivity)) }
+			}.toTypedArray()
+			val current = viewModel.targetSource.value
+			val checked = if (current == null) 0 else sources.indexOfFirst { it == current } + 1
+			buildAlertDialog(this@AlternativesActivity) {
+				setTitle(R.string.select_source)
+				setSingleChoiceItems(labels, checked) { dialog, which ->
+					viewModel.setTargetSource(if (which == 0) null else sources[which - 1])
+					dialog.dismiss()
+				}
+				setNegativeButton(android.R.string.cancel, null)
+			}.show()
+		}
 	}
 }

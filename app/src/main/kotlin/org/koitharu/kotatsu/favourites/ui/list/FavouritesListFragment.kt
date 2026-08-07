@@ -64,6 +64,16 @@ class FavouritesListFragment : MangaListFragment(), PopupMenu.OnMenuItemClickLis
 		return super.onCreateActionMode(controller, menuInflater, menu)
 	}
 
+	override fun onPrepareActionMode(
+		controller: ListSelectionController,
+		mode: ActionMode?,
+		menu: Menu
+	): Boolean {
+		// Migration ("Find similar") is per-manga, so only offer it for a single selection.
+		menu.findItem(R.id.action_related)?.isVisible = controller.count == 1
+		return super.onPrepareActionMode(controller, mode, menu)
+	}
+
 	override fun onActionItemClicked(controller: ListSelectionController, mode: ActionMode?, item: MenuItem): Boolean {
 		return when (item.itemId) {
 			R.id.action_pin -> {
@@ -98,7 +108,7 @@ class FavouritesListFragment : MangaListFragment(), PopupMenu.OnMenuItemClickLis
 			}
 
 			R.id.action_related -> {
-				router.openRelated(selectedItems)
+				selectedItems.singleOrNull()?.let { router.openAlternatives(it) }
 				mode?.finish()
 				true
 			}

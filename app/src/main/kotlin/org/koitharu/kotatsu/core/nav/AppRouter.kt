@@ -175,10 +175,11 @@ class AppRouter private constructor(
         startActivity(activityIntent, options)
     }
 
-    fun openAlternatives(manga: Manga) {
+    fun openAlternatives(manga: Manga, source: MangaSource? = null) {
         startActivity(
             Intent(contextOrNull() ?: return, AlternativesActivity::class.java)
-                .putExtra(KEY_MANGA, ParcelableManga(manga)),
+                .putExtra(KEY_MANGA, ParcelableManga(manga))
+                .putExtra(KEY_SOURCE, source?.name),
         )
     }
 

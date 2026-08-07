@@ -628,6 +628,9 @@
     <string name="pages_read_s">Pages read: %s</string>
     <string name="alternatives">Alternatives</string>
     <string name="migrate">Migrate</string>
+    <string name="search_manually">Search manually</string>
+    <string name="select_source">Select source</string>
+    <string name="all_sources">All sources</string>
     <string name="migrate_confirmation">Manga \"%1$s\" from \"%2$s\" will be replaced with \"%3$s\" from \"%4$s\" in your history and favorites (if present)</string>
     <string name="manga_migration">Manga migration</string>
     <string name="migration_completed">Migration completed</string>
