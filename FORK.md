@@ -104,10 +104,19 @@ This is the focus of the fork. Existing upstream foldable support lives in
     a `copy` flag: `copy=false` (Migrate) moves favourites/history/tracking/scrobbling to the new
     manga and removes the original; `copy=true` (Copy) duplicates favourites + history onto the new
     manga and leaves the original (and its tracking) intact.
-  - **Batch migration** — selecting **multiple** favourites and choosing "Find similar" opens a source
-    picker, then Migrate/Copy **all** of them at once via a foreground `MigrationService`
+  - **Batch migration** — selecting **multiple** favourites and choosing **Migration** opens the
+    source screen, then Migrate/Copy **all** of them at once via a foreground `MigrationService`
     (`BatchMigrateUseCase` auto-matches each manga's best title hit on the chosen source; progress +
     summary notification). A single selection still opens the interactive screen with manual match.
+  - **Dedicated source-selection screen** (`MigrationSourceActivity`) — replaces the old popup. A
+    full screen listing enabled sources (preferred first), an overflow **Show disabled sources**
+    toggle that reveals disabled sources with inline **enable** switches, and a per-row **star** to
+    set a **preferred** source (persisted). Selecting a source runs the batch (with a manga
+    selection) or returns it to the single-manga screen.
+  - **Naming** — the migration entry is **"Migrate"** in a manga's details (was "Alternatives") and
+    **"Migration"** in the favourites selection; the old favourites **"Fix"** (auto-repair) item was
+    removed (auto-repair still runs from the error screen). The details **"Find similar"** (a
+    title-search discovery) is unchanged and distinct from migration.
 
   _Known gap (follow-up):_ page-level **bookmarks** and per-manga reader prefs are still not carried
   across a migration — doing it meaningfully needs chapter-number matching (bookmarks reference the
