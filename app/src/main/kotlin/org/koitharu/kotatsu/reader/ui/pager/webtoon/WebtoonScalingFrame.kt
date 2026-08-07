@@ -56,6 +56,11 @@ class WebtoonScalingFrame @JvmOverloads constructor(
 	private var animator: ValueAnimator? = null
 	private var pendingScroll = 0
 
+	// Remembered zoom (scale) per screen width, so switching between screens of different
+	// sizes (e.g. folding / unfolding a foldable) restores the zoom previously set for that
+	// screen instead of forcing the reader to be re-zoomed each time.
+	private val zoomByWidth = HashMap<Int, Float>()
+
 	var isZoomEnable = false
 		set(value) {
 			field = value
@@ -160,8 +165,24 @@ class WebtoonScalingFrame @JvmOverloads constructor(
 
 	override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
 		super.onSizeChanged(w, h, oldw, oldh)
+		// Save the zoom set for the previous screen size before switching to the new one.
+		if (oldw > 0 && oldw != w && !scale.isNaN()) {
+			zoomByWidth[oldw] = scale
+		}
 		halfWidth = w / 2f
 		halfHeight = h / 2f
+		// On a screen-size change restore the zoom previously used for this size (defaulting
+		// to fit) rather than keeping the now-mismatched zoom from the previous screen.
+		if (oldw > 0 && oldw != w && isZoomEnable && childCount > 0) {
+			val remembered = zoomByWidth[w] ?: 1f
+			if (!scale.isNaN() && scale != 1f) {
+				scaleChild(1f, halfWidth, halfHeight)
+			}
+			if (remembered != 1f) {
+				scaleChild(remembered, halfWidth, halfHeight)
+			}
+			onPostScale(invalidateLayout = true)
+		}
 	}
 
 	override fun onZoomIn() {

@@ -64,8 +64,14 @@ This is the focus of the fork. Existing upstream foldable support lives in
   in-place viewport resize (moving between the Z Fold cover and inner screens, or a
   multi-window resize) each page's render scale was left pinned to the old width, so pages were
   drawn smaller than their re-measured bounds and showed black bars top and bottom. An
-  `onSizeChanged` override now re-pins the scale to the new width and re-centers at the current
-  reading position, keeping the strip continuous.
+  `onSizeChanged` override now re-pins the per-page fit scale to the new width and re-centers at
+  the current reading position, keeping the strip continuous.
+- _Per-screen zoom profiles (continuous reader)_ (`WebtoonScalingFrame.kt`): the reader now
+  remembers the zoom level per screen size. When the screen size changes (folding / unfolding),
+  it saves the zoom you had set for the previous screen and restores the zoom previously used
+  for the new one (defaulting to fit) — so you no longer have to re-zoom after each switch.
+  Remembered per reading session (survives in-place fold/unfold; resets if the reader is fully
+  recreated).
 
 **Planned (next)**
 
@@ -79,6 +85,12 @@ This is the focus of the fork. Existing upstream foldable support lives in
 
 ### Other changes
 
+- _No sources enabled on first launch_ (`main/ui/welcome/WelcomeViewModel.kt`): the first-run
+  welcome screen no longer auto-selects the device language and pre-enables its sources. A fresh
+  install now starts with **no sources enabled**; the user opts in by choosing languages on the
+  welcome screen or adding sources from the catalog.
+- _Debug/nightly variant names_ (`src/debug`, `src/nightly` `strings.xml`): rebranded from
+  "Kotatsu Dev" / "Kotatsu Nightly" to "Yomu-Re:dive Dev" / "Yomu-Re:dive Nightly".
 - _Multi-select "Find similar" in Favourites_ (`res/menu/mode_favourites.xml`,
   `FavouritesListFragment.kt`, `AppRouter.openRelated(Collection<Manga>)`,
   `RelatedListViewModel.kt`): the favourites selection action-mode gained a **Find similar**
