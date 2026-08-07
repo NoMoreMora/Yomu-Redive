@@ -14,8 +14,8 @@
 
 	<org.koitharu.kotatsu.image.ui.CoverImageView
 		android:id="@+id/imageView_cover_from"
-		android:layout_width="40dp"
-		android:layout_height="56dp"
+		android:layout_width="64dp"
+		android:layout_height="90dp"
 		android:scaleType="centerCrop" />
 
 	<LinearLayout
@@ -70,8 +70,8 @@
 
 		<org.koitharu.kotatsu.image.ui.CoverImageView
 			android:id="@+id/imageView_cover_to"
-			android:layout_width="40dp"
-			android:layout_height="56dp"
+			android:layout_width="64dp"
+			android:layout_height="90dp"
 			android:scaleType="centerCrop" />
 
 		<LinearLayout
