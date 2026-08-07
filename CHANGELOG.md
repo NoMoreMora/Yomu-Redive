@@ -41,11 +41,14 @@ First versioned Yomu-Re:dive release. Forked from Kotatsu-Redo `9.8.1` (`cb430d3
 - **Keep favourites up to date**: retains cover art and details for favourite manga until they are
   removed from favourites, refreshing them once a day via a background worker (opt-in).
 
-### Added — updates (Settings → About)
+### Added — updates
 
-- **Update channel** selector: choose **Stable** (only plain-numbered releases) or **Development**
-  (also receive pre-release `-beta` builds via the in-app GitHub-releases updater). Replaces the old
-  "Allow unstable updates" toggle.
+- **Pull-to-refresh on the Updated tab**: swiping down at the top now triggers an immediate scan of
+  your favourites for new chapters (the same tracker scan the Feed uses), with the spinner showing
+  while it runs.
+- **Update channel** selector (Settings → About): choose **Stable** (only plain-numbered releases)
+  or **Development** (also receive pre-release `-beta` builds via the in-app GitHub-releases
+  updater). Replaces the old "Allow unstable updates" toggle.
 
 ### Changed
 

@@ -30,6 +30,7 @@ import org.koitharu.kotatsu.list.ui.model.toErrorState
 import org.koitharu.kotatsu.tracker.domain.TrackingRepository
 import org.koitharu.kotatsu.tracker.domain.UpdatesListQuickFilter
 import org.koitharu.kotatsu.tracker.domain.model.MangaTracking
+import org.koitharu.kotatsu.tracker.work.TrackWorker
 import javax.inject.Inject
 import org.koitharu.kotatsu.local.data.LocalStorageChanges
 import org.koitharu.kotatsu.local.domain.model.LocalManga
@@ -41,9 +42,14 @@ class UpdatesViewModel @Inject constructor(
 	settings: AppSettings,
 	private val mangaListMapper: MangaListMapper,
 	private val quickFilter: UpdatesListQuickFilter,
+	private val scheduler: TrackWorker.Scheduler,
 	mangaDataRepository: MangaDataRepository,
 	@LocalStorageChanges localStorageChanges: SharedFlow<LocalManga?>,
 ) : MangaListViewModel(settings, mangaDataRepository, localStorageChanges), QuickFilterListener by quickFilter {
+
+	/** Whether a favourites/tracking scan is currently running (drives the pull-to-refresh spinner). */
+	val isRunning = scheduler.observeIsRunning()
+		.stateIn(viewModelScope + Dispatchers.Default, SharingStarted.Lazily, false)
 
 	override val content = combine(
 		quickFilter.appliedOptions.flatMapLatest { filterOptions ->
@@ -83,7 +89,9 @@ class UpdatesViewModel @Inject constructor(
 		}
 	}
 
-	override fun onRefresh() = Unit
+	override fun onRefresh() {
+		scheduler.startNow()
+	}
 
 	override fun onRetry() = Unit
 

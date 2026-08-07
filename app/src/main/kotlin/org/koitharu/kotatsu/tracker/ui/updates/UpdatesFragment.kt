@@ -1,5 +1,6 @@
 package org.koitharu.kotatsu.tracker.ui.updates
 
+import android.os.Bundle
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
@@ -8,13 +9,23 @@ import androidx.fragment.app.viewModels
 import dagger.hilt.android.AndroidEntryPoint
 import org.koitharu.kotatsu.R
 import org.koitharu.kotatsu.core.ui.list.ListSelectionController
+import org.koitharu.kotatsu.core.util.ext.observe
+import org.koitharu.kotatsu.databinding.FragmentListBinding
 import org.koitharu.kotatsu.list.ui.MangaListFragment
 
 @AndroidEntryPoint
 class UpdatesFragment : MangaListFragment() {
 
 	override val viewModel by viewModels<UpdatesViewModel>()
-	override val isSwipeRefreshEnabled = false
+	override val isSwipeRefreshEnabled = true
+
+	override fun onViewBindingCreated(binding: FragmentListBinding, savedInstanceState: Bundle?) {
+		super.onViewBindingCreated(binding, savedInstanceState)
+		// Pull-to-refresh triggers a favourites/tracking scan; keep the spinner up while it runs.
+		viewModel.isRunning.observe(viewLifecycleOwner) { isRunning ->
+			binding.swipeRefreshLayout.isRefreshing = isRunning
+		}
+	}
 
 	override fun onScrolledToEnd() = Unit
 
