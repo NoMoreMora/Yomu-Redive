@@ -1,11 +1,32 @@
 <div align="center">
 
-**[Kotatsu-Redo](https://github.com/Kotatsu-Redo/Kotatsu-Redo) is a free and open-source manga reader for Android with built-in
-online content sources. The main goal of the fork is to maintain existing features and sources.**
+# Yomu-Re:dive
 
-![Android 6.0](https://img.shields.io/badge/android-6.0+-brightgreen) [![Discord](https://img.shields.io/discord/898363402467045416?color=5865f2&label=discord)](https://discord.gg/sfPJSQNxfW) [![License](https://img.shields.io/github/license/KotatsuApp/Kotatsu)](https://github.com/KotatsuApp/Kotatsu/blob/devel/LICENSE)
+**Yomu-Re:dive is a free and open-source manga reader for Android, focused on making the
+reading experience great on foldable phones. It is a fork of
+[Kotatsu-Redo](https://github.com/Kotatsu-Redo/Kotatsu-Redo) (itself a fork of
+[Kotatsu](https://github.com/KotatsuApp/Kotatsu)), keeping all of its features and 1200+
+online content sources while adding foldable-first reading enhancements.**
 
-### Main Features
+![Android 6.0](https://img.shields.io/badge/android-6.0+-brightgreen) [![License](https://img.shields.io/badge/license-GPLv3-blue)](LICENSE)
+
+</div>
+
+### Fork goals
+
+<div align="left">
+
+-   **Foldable-first reader** — take full advantage of the inner display: fold-aware
+    two-page spreads, hinge/occlusion-safe layouts, and posture-aware (tabletop / book)
+    reading modes.
+-   **Continuity across postures** — keep your place and reading settings when folding and
+    unfolding, without losing the page or re-fitting the image.
+-   Maintain feature and source parity with upstream Kotatsu-Redo by regularly merging
+    updates.
+
+</div>
+
+### Inherited features
 
 <div align="left">
 
@@ -24,38 +45,30 @@ online content sources. The main goal of the fork is to maintain existing featur
 
 </div>
 
-### In-App Screenshots
+### Building
 
-<div align="center">
-    <img src="./metadata/en-US/images/phoneScreenshots/1.png" alt="Mobile view" width="250"/>
-    <img src="./metadata/en-US/images/phoneScreenshots/2.png" alt="Mobile view" width="250"/>
-    <img src="./metadata/en-US/images/phoneScreenshots/3.png" alt="Mobile view" width="250"/>
-    <img src="./metadata/en-US/images/phoneScreenshots/4.png" alt="Mobile view" width="250"/>
-    <img src="./metadata/en-US/images/phoneScreenshots/5.png" alt="Mobile view" width="250"/>
-    <img src="./metadata/en-US/images/phoneScreenshots/6.png" alt="Mobile view" width="250"/>
-</div>
+```bash
+./gradlew assembleDebug
+```
 
-<br>
+The debug build installs under the application id `io.github.yomuredive.yomu.debug`, so it
+can be installed side-by-side with Kotatsu / Kotatsu-Redo for comparison.
 
-<div align="center">
-    <img src="./metadata/en-US/images/tenInchScreenshots/1.png" alt="Tablet view" width="400"/>
-    <img src="./metadata/en-US/images/tenInchScreenshots/2.png" alt="Tablet view" width="400"/>
-</div>
+### Staying in sync with upstream
+
+This repository keeps Kotatsu-Redo configured as the `upstream` remote. To pull the latest
+upstream changes into your fork:
+
+```bash
+git fetch upstream
+git merge upstream/devel
+```
+
+See [FORK.md](FORK.md) for the full fork lineage and the list of changes made in this fork.
 
 ### Contributing
 
-**📌 Pull requests are welcome, if you want:
-See [CONTRIBUTING.md](https://github.com/Kotatsu-Redo/Kotatsu-Redo/blob/devel/CONTRIBUTING.md) for the guidelines**
-
-### Certificate fingerprints
-
-```plaintext
-70:BD:84:07:13:01:84:5E:A3:D0:A4:E5:F3:3A:D2:41:0D:C9:FC:EB
-```
-
-```plaintext
-FF:D9:C9:91:06:64:07:69:3C:F4:6E:46:9F:EA:DB:88:8D:33:FB:B2:FB:A7:7E:A3:79:B0:CA:12:A3:5C:66:1A
-```
+**📌 Pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the guidelines.**
 
 ### License
 
@@ -63,9 +76,10 @@ FF:D9:C9:91:06:64:07:69:3C:F4:6E:46:9F:EA:DB:88:8D:33:FB:B2:FB:A7:7E:A3:79:B0:CA
 
 <div align="left">
 
-You may copy, distribute and modify the software as long as you track changes/dates in source files. Any modifications
-to or software including (via compiler) GPL-licensed code must also be made available under the GPL along with build &
-install instructions.
+Yomu-Re:dive is licensed under the GNU GPLv3, inherited from Kotatsu / Kotatsu-Redo. You may
+copy, distribute and modify the software as long as you track changes/dates in source files.
+Any modifications to or software including (via compiler) GPL-licensed code must also be made
+available under the GPL along with build & install instructions.
 
 </div>
 
@@ -73,9 +87,10 @@ install instructions.
 
 <div align="left">
 
-The developers of this application do not have any affiliation with the content available in the app and does not store
-or distribute any content. This application should be considered a web browser, all content that can be found using this
-application is freely available on the Internet. All DMCA takedown requests should be sent to the owners of the website
-where the content is hosted.
+The developers of this application do not have any affiliation with the content available in
+the app and does not store or distribute any content. This application should be considered a
+web browser, all content that can be found using this application is freely available on the
+Internet. All DMCA takedown requests should be sent to the owners of the website where the
+content is hosted.
 
 </div>

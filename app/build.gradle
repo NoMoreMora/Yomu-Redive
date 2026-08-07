@@ -26,7 +26,7 @@ android {
     }
 
     defaultConfig {
-		applicationId 'io.github.kotatsuredo.kotatsu'
+		applicationId 'io.github.yomuredive.yomu'
 		minSdk = 23
 		targetSdk = 37
 		versionCode = 2039
