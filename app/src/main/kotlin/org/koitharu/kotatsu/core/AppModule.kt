@@ -37,6 +37,7 @@ import org.koitharu.kotatsu.core.exceptions.resolve.CaptchaAutoResolveCoordinato
 import org.koitharu.kotatsu.core.exceptions.resolve.CaptchaHandler
 import org.koitharu.kotatsu.core.image.AvifImageDecoder
 import org.koitharu.kotatsu.core.image.CbzFetcher
+import org.koitharu.kotatsu.core.image.CoverCacheInterceptor
 import org.koitharu.kotatsu.core.image.MangaSourceHeaderInterceptor
 import org.koitharu.kotatsu.core.network.MangaHttpClient
 import org.koitharu.kotatsu.core.network.imageproxy.ImageProxyInterceptor
@@ -110,6 +111,7 @@ interface AppModule {
 			imageProxyInterceptor: ImageProxyInterceptor,
 			pageFetcherFactory: MangaPageFetcher.Factory,
 			coverRestoreInterceptor: CoverRestoreInterceptor,
+			coverCacheInterceptor: CoverCacheInterceptor,
 			networkStateProvider: Provider<NetworkState>,
 			captchaHandler: CaptchaHandler,
 		): ImageLoader {
@@ -147,6 +149,7 @@ interface AppModule {
 					add(MangaPageKeyer())
 					add(pageFetcherFactory)
 					add(imageProxyInterceptor)
+					add(coverCacheInterceptor)
 					add(coverRestoreInterceptor)
 					add(MangaSourceHeaderInterceptor())
 				}.build()

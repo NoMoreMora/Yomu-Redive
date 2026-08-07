@@ -728,6 +728,10 @@
     <string name="invalid_proxy_configuration">Invalid proxy configuration</string>
     <string name="show_quick_filters">Show quick filters</string>
     <string name="show_quick_filters_summary">Provides the ability to filter manga lists by certain parameters</string>
+    <string name="cover_art_cache">Cache cover art</string>
+    <string name="cover_art_cache_summary">Keep browsed cover art cached for 5 days and refresh it at most once a day</string>
+    <string name="favourites_cache">Keep favourites up to date</string>
+    <string name="favourites_cache_summary">Retain cover art and details for favourite manga until removed from favourites, refreshing once a day</string>
     <string name="sfw">SFW</string>
     <string name="skip_all">Skip all</string>
     <string name="stuck">Stuck</string>

@@ -70,6 +70,20 @@
             android:key="manga_list_badges"
             android:title="@string/badges_in_lists" />
 
+        <SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:icon="@drawable/ic_save"
+            android:key="cover_art_cache"
+            android:summary="@string/cover_art_cache_summary"
+            android:title="@string/cover_art_cache" />
+
+        <SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:icon="@drawable/ic_heart"
+            android:key="favourites_cache"
+            android:summary="@string/favourites_cache_summary"
+            android:title="@string/favourites_cache" />
+
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/details">

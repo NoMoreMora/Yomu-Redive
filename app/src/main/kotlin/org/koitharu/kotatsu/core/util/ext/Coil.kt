@@ -62,6 +62,18 @@ fun ImageRequest.Builder.bookmarkExtra(bookmark: Bookmark): ImageRequest.Builder
 	mangaSourceExtra(bookmark.manga.source)
 }
 
+/**
+ * Marks a request as a manga cover load and pins its disk-cache key to the cover url so the
+ * managed cover cache ([org.koitharu.kotatsu.core.image.CoverCacheInterceptor]) can look the
+ * entry up deterministically. No-op for blank urls.
+ */
+fun ImageRequest.Builder.coverCacheExtra(url: String?): ImageRequest.Builder = apply {
+	if (!url.isNullOrEmpty()) {
+		extras[coverCacheKey] = url
+		diskCacheKey(url)
+	}
+}
+
 suspend fun ImageLoader.fetch(data: Any, options: Options): FetchResult? {
 	val mappedData = components.map(data, options)
 	val fetcher = components.newFetcher(mappedData, options, this)?.first
@@ -71,6 +83,7 @@ suspend fun ImageLoader.fetch(data: Any, options: Options): FetchResult? {
 val mangaKey = Extras.Key<Manga?>(null)
 val bookmarkKey = Extras.Key<Bookmark?>(null)
 val mangaSourceKey = Extras.Key<MangaSource?>(null)
+val coverCacheKey = Extras.Key<String?>(null)
 
 @CheckResult
 fun SourceFetchResult.copyWithNewSource(): SourceFetchResult = SourceFetchResult(

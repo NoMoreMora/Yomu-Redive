@@ -131,6 +131,24 @@ This is the focus of the fork. Existing upstream foldable support lives in
   across a migration — doing it meaningfully needs chapter-number matching (bookmarks reference the
   old source's chapter/page ids), so it was deliberately deferred rather than blindly re-keyed.
 
+- _Cover art caching_ (`core/image/CoverCacheInterceptor.kt`, `core/util/ext/Coil.kt`,
+  `image/ui/CoverImageView.kt`, registered in `core/AppModule.kt`): an opt-in toggle in
+  **Settings → Appearance → Manga list**. Cover requests are tagged (`coverCacheExtra`) with a
+  stable disk-cache key equal to the cover url. When the toggle is on, a Coil `Interceptor`
+  manages those entries by age: a cover older than **5 days** is evicted so the next load fetches a
+  fresh copy, while a younger one is served from Coil's disk cache without hitting the network — so
+  a given cover is re-downloaded **at most once** per retention window (well within "once a day").
+  Only cover requests are affected; reader pages and favicons pass through, and any failure falls
+  back to Coil's default behaviour. Off by default.
+- _Keep favourites up to date_ (`favourites/ui/FavouritesUpdateWorker.kt`, wired in
+  `settings/work/WorkScheduleManager.kt`): an opt-in toggle in the same section. A daily
+  `PeriodicWorkScheduler` worker (24 h, network + battery-not-low constraints) refreshes every
+  favourite — re-fetching details from the source with `CachePolicy.WRITE_ONLY` and persisting them
+  via `MangaDataRepository.storeManga(replaceExisting = true)`, then warming the cover into the disk
+  cache. So a favourite's cover art and metadata are **retained until it is un-favourited** (the
+  manga row is kept by the favourites FK) and kept current daily. WorkManager's periodic interval
+  provides the "once a day" gate; scheduling follows the toggle. Off by default.
+
 ## Build environment notes
 
 The debug APK builds with **JDK 17 + Android SDK** (compileSdk `android-37.0`, build-tools

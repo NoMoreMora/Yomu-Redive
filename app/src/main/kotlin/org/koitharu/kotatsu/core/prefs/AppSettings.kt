@@ -113,6 +113,12 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 		get() = prefs.getString(KEY_MIGRATION_PREFERRED_SOURCE, null)
 		set(value) = prefs.edit { putString(KEY_MIGRATION_PREFERRED_SOURCE, value) }
 
+	val isCoverArtCacheEnabled: Boolean
+		get() = prefs.getBoolean(KEY_COVER_ART_CACHE, false)
+
+	val isFavouritesCacheEnabled: Boolean
+		get() = prefs.getBoolean(KEY_FAVOURITES_CACHE, false)
+
 	val isDescriptionExpanded: Boolean
 		get() = !prefs.getBoolean(KEY_COLLAPSE_DESCRIPTION, true)
 
@@ -922,6 +928,8 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 		const val KEY_SOURCES_ENABLED_ALL = "sources_enabled_all"
 		const val KEY_QUICK_FILTER = "quick_filter"
 		const val KEY_MIGRATION_PREFERRED_SOURCE = "migration_preferred_source"
+		const val KEY_COVER_ART_CACHE = "cover_art_cache"
+		const val KEY_FAVOURITES_CACHE = "favourites_cache"
 		const val KEY_COLLAPSE_DESCRIPTION = "description_collapse"
 		const val KEY_BACKUP_TG_ENABLED = "backup_periodic_tg_enabled"
 		const val KEY_BACKUP_TG_CHAT = "backup_periodic_tg_chat_id"

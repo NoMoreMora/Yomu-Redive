@@ -32,6 +32,7 @@ import org.koitharu.kotatsu.core.ui.image.AnimatedPlaceholderDrawable
 import org.koitharu.kotatsu.core.ui.image.TextDrawable
 import org.koitharu.kotatsu.core.ui.image.TrimTransformation
 import org.koitharu.kotatsu.core.util.ext.bookmarkExtra
+import org.koitharu.kotatsu.core.util.ext.coverCacheExtra
 import org.koitharu.kotatsu.core.util.ext.decodeRegion
 import org.koitharu.kotatsu.core.util.ext.isAnimatedImage
 import org.koitharu.kotatsu.core.util.ext.getThemeColor
@@ -126,6 +127,7 @@ class CoverImageView @JvmOverloads constructor(
 		newRequestBuilder(applyTrim = !isAnimatedUrl(cover?.url))
 			.data(cover?.url)
 			.mangaSourceExtra(cover?.mangaSource)
+			.coverCacheExtra(cover?.url)
 			.build(),
 	)
 
@@ -136,6 +138,7 @@ class CoverImageView @JvmOverloads constructor(
 		newRequestBuilder(applyTrim = !isAnimatedUrl(coverUrl))
 			.data(coverUrl)
 			.mangaExtra(manga)
+			.coverCacheExtra(coverUrl)
 			.build(),
 	)
 
@@ -146,6 +149,7 @@ class CoverImageView @JvmOverloads constructor(
 		newRequestBuilder(applyTrim = !isAnimatedUrl(coverUrl))
 			.data(coverUrl)
 			.mangaSourceExtra(source)
+			.coverCacheExtra(coverUrl)
 			.build(),
 	)
 
