@@ -52,7 +52,7 @@
 	<item
 		android:id="@+id/action_alternatives"
 		android:orderInCategory="50"
-		android:title="@string/alternatives"
+		android:title="@string/migrate"
 		app:showAsAction="never" />
 
 	<item

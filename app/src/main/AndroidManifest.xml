@@ -291,7 +291,7 @@
 			android:label="@string/reading_stats" />
 		<activity
 			android:name="org.koitharu.kotatsu.alternatives.ui.AlternativesActivity"
-			android:label="@string/alternatives" />
+			android:label="@string/manga_migration" />
 		<activity
 			android:name="org.koitharu.kotatsu.settings.about.AppUpdateActivity"
 			android:label="@string/app_update_available" />
