@@ -1,6 +1,8 @@
 *.iml
 .gradle
 /local.properties
+# Locally-built APK copies kept in the repo root for sideloading during dev
+/*.apk
 /.idea/caches
 /.idea/libraries
 /.idea/dictionaries
