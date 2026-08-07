@@ -2,40 +2,39 @@
 
 # Yomu-Re:dive
 
-**Yomu-Re:dive is a free and open-source manga reader for Android, focused on making the
-reading experience great on foldable phones. It is a fork of
-[Kotatsu-Redo](https://github.com/Kotatsu-Redo/Kotatsu-Redo) (itself a fork of
-[Kotatsu](https://github.com/KotatsuApp/Kotatsu)), keeping all of its features and 1200+
-online content sources while adding foldable-first reading enhancements.**
+**A free and open-source manga reader for Android, built for foldable phones.**
+
+Yomu-Re:dive makes the most of your device's inner display — fold-aware two-page spreads,
+posture-aware reading, and a layout that adapts as you fold and unfold — while packing a
+full-featured reader with 1200+ online sources.
 
 ![Android 6.0](https://img.shields.io/badge/android-6.0+-brightgreen) [![License](https://img.shields.io/badge/license-GPLv3-blue)](LICENSE)
 
 </div>
 
-### Fork goals
+### Foldable-first
 
 <div align="left">
 
--   **Foldable-first reader** — take full advantage of the inner display: fold-aware
-    two-page spreads, hinge/occlusion-safe layouts, and posture-aware (tabletop / book)
-    reading modes.
--   **Continuity across postures** — keep your place and reading settings when folding and
-    unfolding, without losing the page or re-fitting the image.
--   Maintain feature and source parity with upstream Kotatsu-Redo by regularly merging
-    updates.
+-   **Book-posture two-page spread** — a side-by-side spread engages automatically when the
+    device is unfolded with a vertical hinge, so pages line up with the physical fold.
+-   **Posture awareness** — the reader distinguishes book, tabletop and folded postures and
+    adapts instead of forcing a layout that fights the screen.
+-   **Fold/unfold continuity** — keep your place and reading settings as the device changes
+    shape.
 
 </div>
 
-### Inherited features
+### Features
 
 <div align="left">
 
--   Online [manga catalogues](https://github.com/Kotatsu-Redo/kotatsu-parsers-redo) (with 1200+ manga sources)
+-   Online manga catalogues (with 1200+ manga sources)
 -   Search manga by name, genres and more filters
 -   Favorites organized by user-defined categories
 -   Reading history, bookmarks and incognito mode support
 -   Download manga and read it offline. Third-party CBZ archives are also supported
--   Clean and convenient Material You UI, optimized for phones, tablets and desktop
+-   Clean and convenient Material You UI, optimized for phones, foldables, tablets and desktop
 -   Standard and Webtoon-optimized customizable reader, gesture support on reading interface
 -   Notifications about new chapters with updates feed, manga recommendations (with filters)
 -   Integration with manga tracking services: Shikimori, AniList, MyAnimeList, Kitsu
@@ -51,20 +50,8 @@ online content sources while adding foldable-first reading enhancements.**
 ./gradlew assembleDebug
 ```
 
-The debug build installs under the application id `io.github.yomuredive.yomu.debug`, so it
-can be installed side-by-side with Kotatsu / Kotatsu-Redo for comparison.
-
-### Staying in sync with upstream
-
-This repository keeps Kotatsu-Redo configured as the `upstream` remote. To pull the latest
-upstream changes into your fork:
-
-```bash
-git fetch upstream
-git merge upstream/devel
-```
-
-See [FORK.md](FORK.md) for the full fork lineage and the list of changes made in this fork.
+The debug build installs under the application id `io.github.yomuredive.yomu.debug`, so it can
+be installed alongside other manga readers for comparison.
 
 ### Contributing
 
@@ -76,10 +63,13 @@ See [FORK.md](FORK.md) for the full fork lineage and the list of changes made in
 
 <div align="left">
 
-Yomu-Re:dive is licensed under the GNU GPLv3, inherited from Kotatsu / Kotatsu-Redo. You may
-copy, distribute and modify the software as long as you track changes/dates in source files.
-Any modifications to or software including (via compiler) GPL-licensed code must also be made
-available under the GPL along with build & install instructions.
+Yomu-Re:dive is licensed under the **GNU GPLv3**. You may copy, distribute and modify the
+software as long as you track changes/dates in source files. Any modifications to or software
+including (via compiler) GPL-licensed code must also be made available under the GPL along
+with build & install instructions.
+
+Yomu-Re:dive builds on the work of the Kotatsu project and its contributors; see
+[FORK.md](FORK.md) for the full lineage and attribution.
 
 </div>
 

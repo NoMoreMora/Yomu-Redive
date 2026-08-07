@@ -1,11 +1,15 @@
-## Kotatsu contribution guidelines
+## Contributing to Yomu-Re:dive
 
-+ If you want to **fix bugs** or **implement new features** that **already have an [issue card](https://github.com/Kotatsu-Redo/Kotatsu-Redo/issues):** please assign this issue to you and/or comment about it.
-+ If you want to **implement a new feature:** open an issue or discussion regarding it to ensure it will be accepted.
-+ In case you want to **add a new manga source,** refer to the [parsers repository](https://github.com/Kotatsu-Redo/kotatsu-parsers-redo).
+Thanks for your interest in improving Yomu-Re:dive! The project's focus is a great reading
+experience on foldable phones, so foldable/UX contributions are especially welcome.
 
-**Refactoring** or some **dev-faces improvements** might also be accepted. However, please stick to the following principles:
++ If you want to **fix bugs** or **implement features** that **already have an [issue](https://github.com/NoMoreMora/Yomu-Redive/issues):** please comment on the issue and/or assign it to yourself.
++ If you want to **implement a new feature:** open an issue or discussion first so we can agree on scope before you invest time.
++ Manga **sources** are provided by the parsers library the app depends on — new sources should be contributed there rather than to this repository.
 
-+ **Performance matters.** In the case of choosing between source code beauty and performance, performance should be a priority. 
-+ Please, **do not modify readme and other information files** (except for typos).
-+ **Avoid adding new dependencies** unless required. APK size is important.
+**Refactoring** and **developer-experience improvements** are also welcome. Please stick to the following principles:
+
++ **Performance matters.** When choosing between source-code beauty and performance, performance should win.
++ **Avoid adding new dependencies** unless required. APK size matters.
++ **Keep foldable behavior intact.** If a change touches the reader or layout, verify it in both folded and unfolded (book/tabletop) postures.
++ **Match the existing code style.** The project keeps the internal package structure of its upstream to make merging upstream updates easier — follow the surrounding conventions.
