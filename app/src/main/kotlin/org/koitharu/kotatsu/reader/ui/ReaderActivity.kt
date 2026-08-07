@@ -122,6 +122,11 @@ class ReaderActivity :
     // Tracks whether the foldable device is in an unfolded state (half-opened or flat)
     private var isFoldUnfolded: Boolean = false
 
+    // Tracks "book posture": unfolded with a vertical hinge, so the screen is split
+    // left/right and a side-by-side two-page spread lines up with the physical fold.
+    // A horizontal hinge (flip-style, tabletop/laptop posture) is intentionally excluded.
+    private var isFoldBookPosture: Boolean = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(ActivityReaderBinding.inflate(layoutInflater))
@@ -365,8 +370,9 @@ class ReaderActivity :
 
     private fun applyDoubleModeAuto(manualEnabled: Boolean? = null) {
         val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-        // Auto double-page on foldable when device is unfolded (half-opened or flat)
-        val autoFoldable = settings.isReaderDoubleOnFoldable && isFoldUnfolded
+        // Auto double-page on foldable only in book posture (unfolded, vertical hinge),
+        // so the spread aligns with the physical fold. Excludes flip-style / tabletop.
+        val autoFoldable = settings.isReaderDoubleOnFoldable && isFoldBookPosture
         val manualLandscape = (manualEnabled ?: settings.isReaderDoubleOnLandscape) && isLandscape
         val autoEnabled = autoFoldable || manualLandscape
         readerManager.setDoubleReaderMode(autoEnabled)
@@ -603,8 +609,12 @@ class ReaderActivity :
                     FoldingFeature.State.HALF_OPENED, FoldingFeature.State.FLAT -> true
                     else -> false
                 }
-                if (unfolded != isFoldUnfolded) {
+                // Book posture = unfolded with a vertical hinge (screen split left/right).
+                val bookPosture = unfolded &&
+                    fold?.orientation == FoldingFeature.Orientation.VERTICAL
+                if (unfolded != isFoldUnfolded || bookPosture != isFoldBookPosture) {
                     isFoldUnfolded = unfolded
+                    isFoldBookPosture = bookPosture
                     applyDoubleModeAuto()
                 }
             }

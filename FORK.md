@@ -49,7 +49,27 @@ be installed side-by-side with Kotatsu / Kotatsu-Redo.
 
 ### Foldable enhancements
 
-_Planned / in progress — this is the focus of the fork. Existing upstream foldable support
-lives in `app/src/main/kotlin/org/koitharu/kotatsu/reader/ui/ReaderActivity.kt`
-(`androidx.window` `WindowInfoTracker` + `FoldingFeature`, auto double-page on unfold via the
-`isReaderDoubleOnFoldable` setting)._
+This is the focus of the fork. Existing upstream foldable support lives in
+`app/src/main/kotlin/org/koitharu/kotatsu/reader/ui/ReaderActivity.kt` (`androidx.window`
+`WindowInfoTracker` + `FoldingFeature`, auto double-page on unfold via the
+`isReaderDoubleOnFoldable` setting).
+
+**Done**
+
+- _Posture-aware auto double-page_ (`ReaderActivity.kt`): the automatic side-by-side
+  two-page spread now only engages in **book posture** — unfolded with a *vertical* hinge, so
+  the spread lines up with the physical fold. Flip-style / horizontal-hinge (tabletop/laptop)
+  postures no longer force a side-by-side spread that doesn't match the screen split.
+
+**Planned (next)**
+
+- _Hinge-aware gutter_: inset a two-page spread around the hinge's bounding rect
+  (`FoldingFeature.bounds`) so no artwork is lost under the physical fold. Reader-internal
+  change to the double-page renderer.
+- _Tabletop reading mode_: when the fold is horizontal and separating, show the page in the
+  top physical half and reading controls / next-page area in the bottom half.
+- _Position & zoom continuity_ across fold/unfold transitions.
+
+> Note: none of the fork's code has been compiled in the authoring environment (no
+> JDK/Android SDK there). Build and test with Android Studio or JDK 17 + Android SDK before
+> release.
