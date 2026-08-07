@@ -634,6 +634,8 @@
     <string name="migrate_selected_confirmation">Migrate %1$d selected manga to %2$s? Each one will be auto-matched on that source.</string>
     <string name="migration_result">%1$d of %2$d manga migrated</string>
     <string name="migration">Migration</string>
+    <string name="show_disabled_sources">Show disabled sources</string>
+    <string name="set_as_preferred">Set as preferred source</string>
     <string name="migrate_confirmation">Manga \"%1$s\" from \"%2$s\" will be replaced with \"%3$s\" from \"%4$s\" in your history and favorites (if present)</string>
     <string name="manga_migration">Manga migration</string>
     <string name="migration_completed">Migration completed</string>

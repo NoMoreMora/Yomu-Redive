@@ -146,6 +146,10 @@ class AlternativesViewModel @Inject constructor(
 		restartSearch()
 	}
 
+	fun setTargetSourceByName(name: String?) {
+		setTargetSource(name?.let { n -> sourcesRepository.allMangaSources.firstOrNull { it.name == n } })
+	}
+
 	fun manualSearch(text: String) {
 		query.value = text.trim().takeIf { it.isNotEmpty() }
 		restartSearch()

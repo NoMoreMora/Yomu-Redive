@@ -8,34 +8,22 @@ import android.view.View
 import androidx.appcompat.view.ActionMode
 import androidx.appcompat.widget.PopupMenu
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 import org.koitharu.kotatsu.R
-import org.koitharu.kotatsu.alternatives.ui.MigrationService
-import org.koitharu.kotatsu.core.model.getTitle
 import org.koitharu.kotatsu.core.nav.AppRouter
 import org.koitharu.kotatsu.core.nav.router
-import org.koitharu.kotatsu.core.ui.dialog.buildAlertDialog
 import org.koitharu.kotatsu.core.ui.list.ListSelectionController
 import org.koitharu.kotatsu.core.util.ext.sortedByOrdinal
 import org.koitharu.kotatsu.core.util.ext.withArgs
 import org.koitharu.kotatsu.databinding.FragmentListBinding
-import org.koitharu.kotatsu.explore.data.MangaSourcesRepository
 import org.koitharu.kotatsu.list.domain.ListSortOrder
 import org.koitharu.kotatsu.list.ui.MangaListFragment
-import org.koitharu.kotatsu.parsers.model.Manga
-import org.koitharu.kotatsu.parsers.model.MangaSource
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class FavouritesListFragment : MangaListFragment(), PopupMenu.OnMenuItemClickListener {
 
 	override val viewModel by viewModels<FavouritesListViewModel>()
-
-	@Inject
-	lateinit var mangaSourcesRepository: MangaSourcesRepository
 
 	override val isSwipeRefreshEnabled = false
 
@@ -114,7 +102,7 @@ class FavouritesListFragment : MangaListFragment(), PopupMenu.OnMenuItemClickLis
 				when {
 					items.isEmpty() -> Unit
 					items.size == 1 -> router.openAlternatives(items.first())
-					else -> showBatchMigrationSourcePicker(items)
+					else -> router.openMigrationSource(items.map { it.id })
 				}
 				mode?.finish()
 				true
@@ -122,39 +110,6 @@ class FavouritesListFragment : MangaListFragment(), PopupMenu.OnMenuItemClickLis
 
 			else -> super.onActionItemClicked(controller, mode, item)
 		}
-	}
-
-	private fun showBatchMigrationSourcePicker(items: Set<Manga>) {
-		val ids = items.map { it.id }
-		lifecycleScope.launch {
-			val sources = mangaSourcesRepository.getEnabledSources()
-			if (sources.isEmpty()) {
-				return@launch
-			}
-			val labels = sources.map { it.getTitle(requireContext()) }.toTypedArray()
-			buildAlertDialog(requireContext()) {
-				setTitle(R.string.select_source)
-				setItems(labels) { _, which ->
-					confirmBatchMigration(ids, sources[which])
-				}
-				setNegativeButton(android.R.string.cancel, null)
-			}.show()
-		}
-	}
-
-	private fun confirmBatchMigration(ids: List<Long>, source: MangaSource) {
-		buildAlertDialog(requireContext(), isCentered = true) {
-			setIcon(R.drawable.ic_replace)
-			setTitle(R.string.manga_migration)
-			setMessage(getString(R.string.migrate_selected_confirmation, ids.size, source.getTitle(context)))
-			setNegativeButton(android.R.string.cancel, null)
-			setNeutralButton(android.R.string.copy) { _, _ ->
-				MigrationService.start(requireContext(), ids, source.name, copy = true)
-			}
-			setPositiveButton(R.string.migrate) { _, _ ->
-				MigrationService.start(requireContext(), ids, source.name, copy = false)
-			}
-		}.show()
 	}
 
 	companion object {

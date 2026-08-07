@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content"
+	android:background="?attr/selectableItemBackground"
+	android:clickable="true"
+	android:focusable="true"
+	android:gravity="center_vertical"
+	android:minHeight="64dp"
+	android:orientation="horizontal"
+	android:paddingStart="@dimen/screen_padding"
+	android:paddingEnd="@dimen/margin_small"
+	android:paddingTop="@dimen/margin_small"
+	android:paddingBottom="@dimen/margin_small">
+
+	<LinearLayout
+		android:layout_width="0dp"
+		android:layout_height="wrap_content"
+		android:layout_weight="1"
+		android:orientation="vertical">
+
+		<TextView
+			android:id="@+id/textView_title"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:ellipsize="end"
+			android:maxLines="1"
+			android:textAppearance="?attr/textAppearanceBodyLarge"
+			tools:text="Manga source" />
+
+		<TextView
+			android:id="@+id/textView_subtitle"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:ellipsize="end"
+			android:maxLines="1"
+			android:textAppearance="?attr/textAppearanceBodySmall"
+			android:textColor="?android:attr/textColorSecondary"
+			tools:text="Enabled" />
+
+	</LinearLayout>
+
+	<ImageButton
+		android:id="@+id/button_preferred"
+		android:layout_width="48dp"
+		android:layout_height="48dp"
+		android:background="?attr/selectableItemBackgroundBorderless"
+		android:contentDescription="@string/set_as_preferred"
+		android:scaleType="fitCenter"
+		android:padding="12dp"
+		tools:src="@android:drawable/btn_star_big_off" />
+
+	<com.google.android.material.switchmaterial.SwitchMaterial
+		android:id="@+id/switch_enabled"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_marginStart="@dimen/margin_small" />
+
+</LinearLayout>

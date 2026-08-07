@@ -25,6 +25,7 @@ import dagger.hilt.android.EntryPointAccessors
 import org.koitharu.kotatsu.BuildConfig
 import org.koitharu.kotatsu.R
 import org.koitharu.kotatsu.alternatives.ui.AlternativesActivity
+import org.koitharu.kotatsu.alternatives.ui.MigrationSourceActivity
 import org.koitharu.kotatsu.backups.ui.backup.BackupDialogFragment
 import org.koitharu.kotatsu.backups.ui.restore.RestoreDialogFragment
 import org.koitharu.kotatsu.bookmarks.ui.AllBookmarksActivity
@@ -181,6 +182,13 @@ class AppRouter private constructor(
                 .putExtra(KEY_MANGA, ParcelableManga(manga))
                 .putExtra(KEY_SOURCE, source?.name),
         )
+    }
+
+    fun openMigrationSource(mangaIds: Collection<Long>) {
+        if (mangaIds.isEmpty()) {
+            return
+        }
+        startActivity(MigrationSourceActivity.newIntent(contextOrNull() ?: return, mangaIds.toLongArray()))
     }
 
     fun openRelated(manga: Manga) = openRelated(setOf(manga))

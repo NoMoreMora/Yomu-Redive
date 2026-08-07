@@ -7,6 +7,7 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.core.view.MenuProvider
 import androidx.core.view.WindowInsetsCompat
@@ -18,6 +19,7 @@ import kotlinx.coroutines.launch
 import org.koitharu.kotatsu.R
 import org.koitharu.kotatsu.core.exceptions.resolve.SnackbarErrorObserver
 import org.koitharu.kotatsu.core.model.getTitle
+import org.koitharu.kotatsu.core.nav.AppRouter
 import org.koitharu.kotatsu.core.nav.router
 import org.koitharu.kotatsu.core.ui.BaseActivity
 import org.koitharu.kotatsu.core.ui.BaseListAdapter
@@ -49,6 +51,12 @@ class AlternativesActivity : BaseActivity<ActivityAlternativesBinding>(),
 	lateinit var coil: ImageLoader
 
 	private val viewModel by viewModels<AlternativesViewModel>()
+
+	private val sourcePickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+		if (result.resultCode == RESULT_OK) {
+			viewModel.setTargetSourceByName(result.data?.getStringExtra(AppRouter.KEY_SOURCE))
+		}
+	}
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
@@ -169,22 +177,6 @@ class AlternativesActivity : BaseActivity<ActivityAlternativesBinding>(),
 	}
 
 	private fun showSourcePickerDialog() {
-		lifecycleScope.launch {
-			val sources = viewModel.getAvailableSources()
-			val labels = buildList {
-				add(getString(R.string.all_sources))
-				sources.forEach { add(it.getTitle(this@AlternativesActivity)) }
-			}.toTypedArray()
-			val current = viewModel.targetSource.value
-			val checked = if (current == null) 0 else sources.indexOfFirst { it == current } + 1
-			buildAlertDialog(this@AlternativesActivity) {
-				setTitle(R.string.select_source)
-				setSingleChoiceItems(labels, checked) { dialog, which ->
-					viewModel.setTargetSource(if (which == 0) null else sources[which - 1])
-					dialog.dismiss()
-				}
-				setNegativeButton(android.R.string.cancel, null)
-			}.show()
-		}
+		sourcePickerLauncher.launch(MigrationSourceActivity.newIntent(this))
 	}
 }
