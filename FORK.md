@@ -104,15 +104,20 @@ This is the focus of the fork. Existing upstream foldable support lives in
     a `copy` flag: `copy=false` (Migrate) moves favourites/history/tracking/scrobbling to the new
     manga and removes the original; `copy=true` (Copy) duplicates favourites + history onto the new
     manga and leaves the original (and its tracking) intact.
-  - **Batch migration** — selecting **multiple** favourites and choosing **Migration** opens the
-    source screen, then Migrate/Copy **all** of them at once via a foreground `MigrationService`
-    (`BatchMigrateUseCase` auto-matches each manga's best title hit on the chosen source; progress +
-    summary notification). A single selection still opens the interactive screen with manual match.
+  - **Batch migration (TachiyomiSY-style review list)** — selecting **multiple** favourites and
+    choosing **Migration** opens the source screen, then a **review list** (`MigrationListActivity`):
+    each row shows the original manga (left) and its auto-matched candidate on the chosen source
+    (right), or "No match — tap to search". Tapping the right side opens a **cross-source search**
+    (`AlternativesActivity` pick mode: all enabled sources + a "search disabled sources" button) to
+    override the match. An **Apply** action migrates/copies all matched rows. A single selection
+    still opens the interactive screen with manual match.
   - **Dedicated source-selection screen** (`MigrationSourceActivity`) — replaces the old popup. A
     full screen listing enabled sources (preferred first), an overflow **Show disabled sources**
     toggle that reveals disabled sources with inline **enable** switches, and a per-row **star** to
-    set a **preferred** source (persisted). Selecting a source runs the batch (with a manga
-    selection) or returns it to the single-manga screen.
+    set a **preferred** source (persisted). Selecting a source opens the review list (batch) or
+    returns it to the single-manga screen.
+    _(The earlier foreground `MigrationService` + `BatchMigrateUseCase` "auto-migrate all" path is
+    now superseded by the review list and no longer wired.)_
   - **Naming** — the migration entry is **"Migrate"** in a manga's details (was "Alternatives") and
     **"Migration"** in the favourites selection; the old favourites **"Fix"** (auto-repair) item was
     removed (auto-repair still runs from the error screen). The details **"Find similar"** (a
