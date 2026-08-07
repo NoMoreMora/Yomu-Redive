@@ -58,6 +58,11 @@
 		app:showAsAction="ifRoom|withText" />
 
 	<item
+		android:id="@+id/action_related"
+		android:title="@string/find_similar"
+		app:showAsAction="ifRoom|withText" />
+
+	<item
 		android:id="@+id/action_select_all"
 		android:icon="?actionModeSelectAllDrawable"
 		android:title="@android:string/selectAll"

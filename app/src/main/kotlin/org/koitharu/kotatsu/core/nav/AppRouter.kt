@@ -182,10 +182,18 @@ class AppRouter private constructor(
         )
     }
 
-    fun openRelated(manga: Manga) {
+    fun openRelated(manga: Manga) = openRelated(setOf(manga))
+
+    fun openRelated(manga: Collection<Manga>) {
+        if (manga.isEmpty()) {
+            return
+        }
         startActivity(
-            Intent(contextOrNull(), RelatedMangaActivity::class.java)
-                .putExtra(KEY_MANGA, ParcelableManga(manga)),
+            Intent(contextOrNull() ?: return, RelatedMangaActivity::class.java)
+                .putParcelableArrayListExtra(
+                    KEY_MANGA_LIST,
+                    manga.mapTo(ArrayList(manga.size)) { ParcelableManga(it, withDescription = false) },
+                ),
         )
     }
 

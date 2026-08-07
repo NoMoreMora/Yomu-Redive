@@ -60,6 +60,12 @@ This is the focus of the fork. Existing upstream foldable support lives in
   two-page spread now only engages in **book posture** — unfolded with a *vertical* hinge, so
   the spread lines up with the physical fold. Flip-style / horizontal-hinge (tabletop/laptop)
   postures no longer force a side-by-side spread that doesn't match the screen split.
+- _Seamless continuous (webtoon) strip across fold/unfold_ (`WebtoonImageView.kt`): on an
+  in-place viewport resize (moving between the Z Fold cover and inner screens, or a
+  multi-window resize) each page's render scale was left pinned to the old width, so pages were
+  drawn smaller than their re-measured bounds and showed black bars top and bottom. An
+  `onSizeChanged` override now re-pins the scale to the new width and re-centers at the current
+  reading position, keeping the strip continuous.
 
 **Planned (next)**
 
@@ -68,8 +74,26 @@ This is the focus of the fork. Existing upstream foldable support lives in
   change to the double-page renderer.
 - _Tabletop reading mode_: when the fold is horizontal and separating, show the page in the
   top physical half and reading controls / next-page area in the bottom half.
-- _Position & zoom continuity_ across fold/unfold transitions.
+- _Position & zoom continuity_ for the paged reader across fold/unfold transitions (the
+  continuous reader is handled above).
 
-> Note: none of the fork's code has been compiled in the authoring environment (no
-> JDK/Android SDK there). Build and test with Android Studio or JDK 17 + Android SDK before
-> release.
+### Other changes
+
+- _Multi-select "Find similar" in Favourites_ (`res/menu/mode_favourites.xml`,
+  `FavouritesListFragment.kt`, `AppRouter.openRelated(Collection<Manga>)`,
+  `RelatedListViewModel.kt`): the favourites selection action-mode gained a **Find similar**
+  action. It opens the Related screen seeded by every selected manga — fetching related titles
+  per source concurrently, then merging and de-duplicating (excluding the selected seeds) — so
+  you can find manga similar to a whole set of favourites at once instead of one at a time. The
+  single-manga Related entry point (from a title's details) is unchanged.
+
+## Build environment notes
+
+The debug APK builds with **JDK 17 + Android SDK** (compileSdk `android-37.0`, build-tools
+`35.0.0`) via `./gradlew assembleDebug`.
+
+> Windows/JVM gotcha: in some restricted environments JDK 17's NIO self-pipe fails to start
+> with "Unable to establish loopback connection" because it creates an AF_UNIX socket whose
+> path (under the default temp dir) exceeds the socket-path limit. Work around it by pointing
+> that socket at a short path, e.g. `JAVA_TOOL_OPTIONS=-Djdk.net.unixdomain.tmpdir=C:\gtmp`
+> (create `C:\gtmp` first). Not needed on a normal dev machine.

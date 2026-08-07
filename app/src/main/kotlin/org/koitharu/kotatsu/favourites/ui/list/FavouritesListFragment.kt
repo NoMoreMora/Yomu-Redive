@@ -12,6 +12,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import org.koitharu.kotatsu.R
 import org.koitharu.kotatsu.core.nav.AppRouter
+import org.koitharu.kotatsu.core.nav.router
 import org.koitharu.kotatsu.core.ui.list.ListSelectionController
 import org.koitharu.kotatsu.core.util.ext.sortedByOrdinal
 import org.koitharu.kotatsu.core.util.ext.withArgs
@@ -93,6 +94,12 @@ class FavouritesListFragment : MangaListFragment(), PopupMenu.OnMenuItemClickLis
 						viewModel.markAsRead(itemsSnapshot)
 						mode?.finish()
 					}.show()
+				true
+			}
+
+			R.id.action_related -> {
+				router.openRelated(selectedItems)
+				mode?.finish()
 				true
 			}
 

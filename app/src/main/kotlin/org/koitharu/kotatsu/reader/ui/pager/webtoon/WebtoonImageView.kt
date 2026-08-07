@@ -96,6 +96,20 @@ class WebtoonImageView @JvmOverloads constructor(
 		setMeasuredDimension(desiredWidth, desiredHeight)
 	}
 
+	override fun onSizeChanged(w: Int, h: Int, oldW: Int, oldH: Int) {
+		super.onSizeChanged(w, h, oldW, oldH)
+		// On an in-place viewport resize (e.g. folding/unfolding a foldable device, or a
+		// multi-window resize) the item height is re-measured for the new width, but the
+		// render scale stays pinned to the OLD width. That leaves the page drawn smaller
+		// than its resized bounds, producing black bars above and below it and breaking the
+		// seamless continuous strip. Re-pin the scale to the new width and re-center so the
+		// page fills the width again while keeping the current reading position.
+		if (isReady && w != oldW && w > 0 && sWidth > 0) {
+			adjustScale()
+			scrollToInternal(scrollPos.coerceIn(0, getScrollRange()))
+		}
+	}
+
 	override fun onDownSamplingChanged() {
 		super.onDownSamplingChanged()
 		if (isReady) {

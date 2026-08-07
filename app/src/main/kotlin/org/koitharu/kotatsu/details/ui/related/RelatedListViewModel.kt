@@ -6,6 +6,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -34,15 +37,14 @@ import javax.inject.Inject
 @HiltViewModel
 class RelatedListViewModel @Inject constructor(
 	savedStateHandle: SavedStateHandle,
-	mangaRepositoryFactory: MangaRepository.Factory,
+	private val mangaRepositoryFactory: MangaRepository.Factory,
 	settings: AppSettings,
 	private val mangaListMapper: MangaListMapper,
 	mangaDataRepository: MangaDataRepository,
 	@LocalStorageChanges localStorageChanges: SharedFlow<LocalManga?>,
 ) : MangaListViewModel(settings, mangaDataRepository, localStorageChanges) {
 
-	private val seed = savedStateHandle.require<ParcelableManga>(AppRouter.KEY_MANGA).manga
-	private val repository = mangaRepositoryFactory.create(seed.source)
+	private val seeds = savedStateHandle.require<List<ParcelableManga>>(AppRouter.KEY_MANGA_LIST).map { it.manga }
 	private val mangaList = MutableStateFlow<List<Manga>?>(null)
 	private val listError = MutableStateFlow<Throwable?>(null)
 	private var loadingJob: Job? = null
@@ -79,7 +81,7 @@ class RelatedListViewModel @Inject constructor(
 		return launchLoadingJob(Dispatchers.Default) {
 			try {
 				listError.value = null
-				mangaList.value = repository.getRelated(seed)
+				mangaList.value = loadRelated()
 			} catch (e: CancellationException) {
 				throw e
 			} catch (e: Throwable) {
@@ -90,6 +92,36 @@ class RelatedListViewModel @Inject constructor(
 				}
 			}
 		}.also { loadingJob = it }
+	}
+
+	private suspend fun loadRelated(): List<Manga> = coroutineScope {
+		val seedIds = seeds.mapTo(HashSet(seeds.size)) { it.id }
+		val results = seeds.map { seed ->
+			async<Result<List<Manga>>> {
+				try {
+					Result.success(mangaRepositoryFactory.create(seed.source).getRelated(seed))
+				} catch (e: CancellationException) {
+					throw e
+				} catch (e: Throwable) {
+					e.printStackTraceDebug()
+					Result.failure(e)
+				}
+			}
+		}.awaitAll()
+		val seen = HashSet<Long>()
+		val merged = ArrayList<Manga>()
+		for (result in results) {
+			val list = result.getOrNull() ?: continue
+			for (manga in list) {
+				if (manga.id !in seedIds && seen.add(manga.id)) {
+					merged.add(manga)
+				}
+			}
+		}
+		if (merged.isEmpty()) {
+			results.firstOrNull { it.isFailure }?.exceptionOrNull()?.let { throw it }
+		}
+		merged
 	}
 
 	private fun createEmptyState() = EmptyState(
