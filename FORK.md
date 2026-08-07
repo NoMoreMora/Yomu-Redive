@@ -159,3 +159,27 @@ The debug APK builds with **JDK 17 + Android SDK** (compileSdk `android-37.0`, b
 > path (under the default temp dir) exceeds the socket-path limit. Work around it by pointing
 > that socket at a short path, e.g. `JAVA_TOOL_OPTIONS=-Djdk.net.unixdomain.tmpdir=C:\gtmp`
 > (create `C:\gtmp` first). Not needed on a normal dev machine.
+
+## Releasing updates
+
+The app ships with an **in-app updater** (inherited from Kotatsu, `core/github/AppUpdateRepository.kt`).
+It polls the GitHub Releases of the repo named in `res/values/constants.xml`
+(`github_updates_repo` → `NoMoreMora/Yomu-Redive`), finds the release whose attached `.apk` asset has
+the highest version (from the release **tag**, minus a leading `v`), and offers it if it is newer than
+the installed build. **No server is involved** — publishing a GitHub Release *is* the update channel.
+
+To cut a release:
+
+1. **Version** — bump both `versionCode` and `versionName` in `app/build.gradle`. `versionName` must be
+   a plain `major.minor.patch` (no `-suffix`): the updater's `VersionId` parser treats any `-suffix` as
+   a pre-release that sorts *below* the same base number, so a suffixed build would never be offered.
+   The fork continues the upstream numeric line it forked from (`9.8.1` → `9.8.2` → …).
+2. **Sign** — release builds are signed from a gitignored `keystore.properties` at the repo root (see
+   `keystore.properties.example`; generate the keystore once with `keytool` and keep it forever — the
+   signature must stay constant or updates won't install). Without that file the release build is left
+   unsigned. Release applicationId is `io.github.yomuredive.yomu` (debug is a separate `.debug` app).
+3. **Build** — `./gradlew assembleRelease` → `app/build/outputs/apk/release/app-release.apk`.
+4. **Publish** — create a GitHub Release on `NoMoreMora/Yomu-Redive`, tag it with the version
+   (e.g. `9.8.2`, matching the existing tag style), write the notes (they surface in the in-app
+   changelog), and **upload the signed APK as a release asset**. Installed apps pick it up on their
+   next update check.

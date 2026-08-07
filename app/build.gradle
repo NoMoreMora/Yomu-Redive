@@ -30,7 +30,7 @@ android {
 		minSdk = 23
 		targetSdk = 37
 		versionCode = 2040
-        versionName = '9.8.1-yomu1'
+        versionName = '9.8.2'
 		generatedDensities = []
 		testInstrumentationRunner 'org.koitharu.kotatsu.HiltTestRunner'
 		ksp {
@@ -47,6 +47,21 @@ android {
 		}
 		resValue 'string', 'tg_backup_bot_token', localProperties.getProperty('tg_backup_bot_token', '')
 	}
+	signingConfigs {
+		release {
+			// Reads signing details from a gitignored keystore.properties at the repo root.
+			// Absent that file (e.g. CI without secrets), the release build is left unsigned.
+			def keystorePropertiesFile = rootProject.file('keystore.properties')
+			if (keystorePropertiesFile.exists()) {
+				def keystoreProperties = new Properties()
+				keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+				storeFile rootProject.file(keystoreProperties['storeFile'])
+				storePassword keystoreProperties['storePassword']
+				keyAlias keystoreProperties['keyAlias']
+				keyPassword keystoreProperties['keyPassword']
+			}
+		}
+	}
 	buildTypes {
 		debug {
 			applicationIdSuffix = '.debug'
@@ -55,6 +70,9 @@ android {
 			minifyEnabled true
 			shrinkResources true
 			proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+			if (rootProject.file('keystore.properties').exists()) {
+				signingConfig signingConfigs.release
+			}
 		}
 		nightly {
 			initWith release

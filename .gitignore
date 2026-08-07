@@ -3,6 +3,10 @@
 /local.properties
 # Locally-built APK copies kept in the repo root for sideloading during dev
 /*.apk
+# Release signing — never commit the keystore or its passwords
+/keystore.properties
+*.jks
+*.keystore
 /.idea/caches
 /.idea/libraries
 /.idea/dictionaries

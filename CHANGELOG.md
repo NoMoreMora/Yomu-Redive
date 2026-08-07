@@ -1,12 +1,13 @@
 # Changelog
 
 All notable changes to **Yomu-Re:dive** are documented here. Yomu-Re:dive is a foldable-focused
-fork of [Kotatsu-Redo](https://github.com/Kotatsu-Redo/Kotatsu-Redo). Fork releases are tagged
-`<upstream-base>-yomu<n>`, where the base is the upstream Kotatsu-Redo version this build tracks.
+fork of [Kotatsu-Redo](https://github.com/Kotatsu-Redo/Kotatsu-Redo). Releases use plain
+`major.minor.patch` numbers continuing the upstream line the fork forked from, so the in-app
+GitHub-releases updater treats each one as a normal upgrade.
 
-## [9.8.1-yomu1] - 2026-08-07
+## [9.8.2] - 2026-08-07
 
-First versioned Yomu-Re:dive release. Based on Kotatsu-Redo `9.8.1` (`cb430d3`).
+First versioned Yomu-Re:dive release. Forked from Kotatsu-Redo `9.8.1` (`cb430d3`).
 
 ### Added — foldable reading
 
