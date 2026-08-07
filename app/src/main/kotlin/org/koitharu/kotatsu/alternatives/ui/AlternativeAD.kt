@@ -36,6 +36,7 @@ fun alternativeAD(
 	coil: ImageLoader,
 	lifecycleOwner: LifecycleOwner,
 	listener: OnListItemClickListener<MangaAlternativeModel>,
+	migrateButtonTextRes: Int = R.string.migrate,
 ) = adapterDelegateViewBinding<MangaAlternativeModel, ListModel, ItemMangaAlternativeBinding>(
 	{ inflater, parent -> ItemMangaAlternativeBinding.inflate(inflater, parent, false) },
 ) {
@@ -45,7 +46,9 @@ fun alternativeAD(
 	val clickListener = AdapterDelegateClickListenerAdapter(this, listener)
 	itemView.setOnClickListener(clickListener)
 	binding.buttonMigrate.setOnClickListener(clickListener)
+	binding.buttonSearch.setOnClickListener(clickListener)
 	binding.chipSource.setOnClickListener(clickListener)
+	binding.buttonMigrate.setText(migrateButtonTextRes)
 
 	bind { payloads ->
 		binding.textViewTitle.text = item.mangaModel.title

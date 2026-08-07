@@ -110,7 +110,11 @@ This is the focus of the fork. Existing upstream foldable support lives in
     (right), or "No match — tap to search". Tapping the right side opens a **cross-source search**
     (`AlternativesActivity` pick mode: all enabled sources + a "search disabled sources" button) to
     override the match. An **Apply** action migrates/copies all matched rows. A single selection
-    still opens the interactive screen with manual match.
+    still opens the interactive screen with manual match. In that picker each candidate card has a
+    **Select** button (renamed from "Migrate" — it only sets the match; nothing is migrated until
+    Apply) and a **Search** button that opens a source-scoped search (`SourceSearchActivity`)
+    pre-filled with the manga title, listing **all** results on that source (`SearchKind.SIMPLE`,
+    unfiltered) so a different-name/language version can be picked.
   - **Dedicated source-selection screen** (`MigrationSourceActivity`) — replaces the old popup. A
     full screen listing enabled sources (preferred first), an overflow **Show disabled sources**
     toggle that reveals disabled sources with inline **enable** switches, and a per-row **star** to

@@ -30,6 +30,7 @@ import org.koitharu.kotatsu.core.ui.dialog.buildAlertDialog
 import org.koitharu.kotatsu.core.ui.dialog.setEditText
 import org.koitharu.kotatsu.core.ui.list.OnListItemClickListener
 import org.koitharu.kotatsu.core.util.ext.consumeAllSystemBarsInsets
+import org.koitharu.kotatsu.core.util.ext.getParcelableExtraCompat
 import org.koitharu.kotatsu.core.util.ext.observe
 import org.koitharu.kotatsu.core.util.ext.observeEvent
 import org.koitharu.kotatsu.core.util.ext.systemBarsInsets
@@ -63,6 +64,15 @@ class AlternativesActivity : BaseActivity<ActivityAlternativesBinding>(),
 
 	private val isPickMode by lazy { intent.getBooleanExtra(EXTRA_PICK, false) }
 
+	private val sourceSearchLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+		if (result.resultCode == RESULT_OK) {
+			val picked = result.data?.getParcelableExtraCompat<ParcelableManga>(AppRouter.KEY_MANGA)?.manga
+			if (picked != null) {
+				if (isPickMode) returnPicked(picked) else confirmMigration(picked)
+			}
+		}
+	}
+
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		setContentView(ActivityAlternativesBinding.inflate(layoutInflater))
@@ -71,7 +81,10 @@ class AlternativesActivity : BaseActivity<ActivityAlternativesBinding>(),
 			subtitle = viewModel.manga.title
 		}
 		val listAdapter = BaseListAdapter<ListModel>()
-			.addDelegate(ListItemType.MANGA_LIST_DETAILED, alternativeAD(coil, this, this))
+			.addDelegate(
+				ListItemType.MANGA_LIST_DETAILED,
+				alternativeAD(coil, this, this, if (isPickMode) R.string.select else R.string.migrate),
+			)
 			.addDelegate(ListItemType.STATE_EMPTY, emptyStateListAD(null))
 			.addDelegate(ListItemType.FOOTER_LOADING, loadingFooterAD())
 			.addDelegate(ListItemType.STATE_LOADING, loadingStateAD())
@@ -132,17 +145,19 @@ class AlternativesActivity : BaseActivity<ActivityAlternativesBinding>(),
 	}
 
 	override fun onItemClick(item: MangaAlternativeModel, view: View) {
-		if (isPickMode && view.id != R.id.chip_source) {
-			// pick mode: return the chosen manga to the caller (migration review list) instead of migrating
-			setResult(RESULT_OK, Intent().putExtra(AppRouter.KEY_MANGA, ParcelableManga(item.manga)))
-			finishAfterTransition()
-			return
-		}
 		when (view.id) {
 			R.id.chip_source -> router.openSearch(item.manga.source, viewModel.manga.title)
-			R.id.button_migrate -> confirmMigration(item.manga)
-			else -> router.openDetails(item.manga)
+			R.id.button_search -> sourceSearchLauncher.launch(
+				SourceSearchActivity.newIntent(this, item.manga.source, viewModel.manga.title),
+			)
+			R.id.button_migrate -> if (isPickMode) returnPicked(item.manga) else confirmMigration(item.manga)
+			else -> if (isPickMode) returnPicked(item.manga) else router.openDetails(item.manga)
 		}
+	}
+
+	private fun returnPicked(manga: Manga) {
+		setResult(RESULT_OK, Intent().putExtra(AppRouter.KEY_MANGA, ParcelableManga(manga)))
+		finishAfterTransition()
 	}
 
 	override fun onRetryClick(error: Throwable) = viewModel.retry()
