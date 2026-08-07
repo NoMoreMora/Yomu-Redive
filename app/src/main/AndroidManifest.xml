@@ -296,6 +296,9 @@
 			android:name="org.koitharu.kotatsu.alternatives.ui.MigrationSourceActivity"
 			android:label="@string/manga_migration" />
 		<activity
+			android:name="org.koitharu.kotatsu.alternatives.ui.MigrationListActivity"
+			android:label="@string/manga_migration" />
+		<activity
 			android:name="org.koitharu.kotatsu.settings.about.AppUpdateActivity"
 			android:label="@string/app_update_available" />
 		<activity

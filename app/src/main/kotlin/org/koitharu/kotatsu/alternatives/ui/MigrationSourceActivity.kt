@@ -17,6 +17,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import org.koitharu.kotatsu.R
 import org.koitharu.kotatsu.core.model.getTitle
 import org.koitharu.kotatsu.core.nav.AppRouter
+import org.koitharu.kotatsu.core.nav.router
 import org.koitharu.kotatsu.core.ui.BaseActivity
 import org.koitharu.kotatsu.core.ui.dialog.buildAlertDialog
 import org.koitharu.kotatsu.core.util.ext.consumeAllSystemBarsInsets
@@ -90,28 +91,13 @@ class MigrationSourceActivity : BaseActivity<ActivityMigrationSourceBinding>(), 
 		}
 		val ids = mangaIds
 		if (ids != null) {
-			confirmBatchMigration(ids, item.source)
+			// proceed to the migration review list (match each, then Apply)
+			router.openMigrationList(ids.toList(), item.source.name)
+			finishAfterTransition()
 		} else {
 			setResult(RESULT_OK, Intent().putExtra(AppRouter.KEY_SOURCE, item.source.name))
 			finishAfterTransition()
 		}
-	}
-
-	private fun confirmBatchMigration(ids: LongArray, source: MangaSource) {
-		buildAlertDialog(this, isCentered = true) {
-			setIcon(R.drawable.ic_replace)
-			setTitle(R.string.manga_migration)
-			setMessage(getString(R.string.migrate_selected_confirmation, ids.size, source.getTitle(context)))
-			setNegativeButton(android.R.string.cancel, null)
-			setNeutralButton(android.R.string.copy) { _, _ ->
-				MigrationService.start(this@MigrationSourceActivity, ids.toList(), source.name, copy = true)
-				finishAfterTransition()
-			}
-			setPositiveButton(R.string.migrate) { _, _ ->
-				MigrationService.start(this@MigrationSourceActivity, ids.toList(), source.name, copy = false)
-				finishAfterTransition()
-			}
-		}.show()
 	}
 
 	private inner class SourceAdapter : RecyclerView.Adapter<SourceViewHolder>() {

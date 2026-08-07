@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content"
+	android:gravity="center_vertical"
+	android:minHeight="80dp"
+	android:orientation="horizontal"
+	android:paddingStart="@dimen/screen_padding"
+	android:paddingEnd="@dimen/screen_padding"
+	android:paddingTop="@dimen/margin_small"
+	android:paddingBottom="@dimen/margin_small">
+
+	<org.koitharu.kotatsu.image.ui.CoverImageView
+		android:id="@+id/imageView_cover_from"
+		android:layout_width="40dp"
+		android:layout_height="56dp"
+		android:scaleType="centerCrop" />
+
+	<LinearLayout
+		android:layout_width="0dp"
+		android:layout_height="wrap_content"
+		android:layout_marginStart="@dimen/margin_small"
+		android:layout_weight="1"
+		android:orientation="vertical">
+
+		<TextView
+			android:id="@+id/textView_title_from"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:ellipsize="end"
+			android:maxLines="2"
+			android:textAppearance="?attr/textAppearanceBodyMedium"
+			tools:text="Original manga title" />
+
+		<TextView
+			android:id="@+id/textView_source_from"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:ellipsize="end"
+			android:maxLines="1"
+			android:textAppearance="?attr/textAppearanceBodySmall"
+			android:textColor="?android:attr/textColorSecondary"
+			tools:text="Source A" />
+
+	</LinearLayout>
+
+	<TextView
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_marginStart="@dimen/margin_small"
+		android:layout_marginEnd="@dimen/margin_small"
+		android:text="→"
+		android:textAppearance="?attr/textAppearanceTitleLarge"
+		android:textColor="?android:attr/textColorSecondary" />
+
+	<LinearLayout
+		android:id="@+id/layout_to"
+		android:layout_width="0dp"
+		android:layout_height="match_parent"
+		android:layout_weight="1"
+		android:background="?attr/selectableItemBackground"
+		android:clickable="true"
+		android:focusable="true"
+		android:gravity="center_vertical"
+		android:orientation="horizontal"
+		android:paddingTop="@dimen/margin_small"
+		android:paddingBottom="@dimen/margin_small">
+
+		<org.koitharu.kotatsu.image.ui.CoverImageView
+			android:id="@+id/imageView_cover_to"
+			android:layout_width="40dp"
+			android:layout_height="56dp"
+			android:scaleType="centerCrop" />
+
+		<LinearLayout
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:layout_marginStart="@dimen/margin_small"
+			android:layout_weight="1"
+			android:orientation="vertical">
+
+			<TextView
+				android:id="@+id/textView_title_to"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:ellipsize="end"
+				android:maxLines="2"
+				android:textAppearance="?attr/textAppearanceBodyMedium"
+				tools:text="Matched manga title" />
+
+			<TextView
+				android:id="@+id/textView_source_to"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:ellipsize="end"
+				android:maxLines="1"
+				android:textAppearance="?attr/textAppearanceBodySmall"
+				android:textColor="?android:attr/textColorSecondary"
+				tools:text="Source B" />
+
+		</LinearLayout>
+
+	</LinearLayout>
+
+</LinearLayout>

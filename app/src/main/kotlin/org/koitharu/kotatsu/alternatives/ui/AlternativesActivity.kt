@@ -1,5 +1,7 @@
 package org.koitharu.kotatsu.alternatives.ui
 
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.text.InputType
 import android.view.Menu
@@ -19,6 +21,7 @@ import kotlinx.coroutines.launch
 import org.koitharu.kotatsu.R
 import org.koitharu.kotatsu.core.exceptions.resolve.SnackbarErrorObserver
 import org.koitharu.kotatsu.core.model.getTitle
+import org.koitharu.kotatsu.core.model.parcelable.ParcelableManga
 import org.koitharu.kotatsu.core.nav.AppRouter
 import org.koitharu.kotatsu.core.nav.router
 import org.koitharu.kotatsu.core.ui.BaseActivity
@@ -57,6 +60,8 @@ class AlternativesActivity : BaseActivity<ActivityAlternativesBinding>(),
 			viewModel.setTargetSourceByName(result.data?.getStringExtra(AppRouter.KEY_SOURCE))
 		}
 	}
+
+	private val isPickMode by lazy { intent.getBooleanExtra(EXTRA_PICK, false) }
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
@@ -127,6 +132,12 @@ class AlternativesActivity : BaseActivity<ActivityAlternativesBinding>(),
 	}
 
 	override fun onItemClick(item: MangaAlternativeModel, view: View) {
+		if (isPickMode && view.id != R.id.chip_source) {
+			// pick mode: return the chosen manga to the caller (migration review list) instead of migrating
+			setResult(RESULT_OK, Intent().putExtra(AppRouter.KEY_MANGA, ParcelableManga(item.manga)))
+			finishAfterTransition()
+			return
+		}
 		when (view.id) {
 			R.id.chip_source -> router.openSearch(item.manga.source, viewModel.manga.title)
 			R.id.button_migrate -> confirmMigration(item.manga)
@@ -178,5 +189,15 @@ class AlternativesActivity : BaseActivity<ActivityAlternativesBinding>(),
 
 	private fun showSourcePickerDialog() {
 		sourcePickerLauncher.launch(MigrationSourceActivity.newIntent(this))
+	}
+
+	companion object {
+
+		private const val EXTRA_PICK = "pick"
+
+		fun newPickIntent(context: Context, manga: Manga): Intent =
+			Intent(context, AlternativesActivity::class.java)
+				.putExtra(AppRouter.KEY_MANGA, ParcelableManga(manga))
+				.putExtra(EXTRA_PICK, true)
 	}
 }
