@@ -104,6 +104,10 @@ This is the focus of the fork. Existing upstream foldable support lives in
     a `copy` flag: `copy=false` (Migrate) moves favourites/history/tracking/scrobbling to the new
     manga and removes the original; `copy=true` (Copy) duplicates favourites + history onto the new
     manga and leaves the original (and its tracking) intact.
+  - **Batch migration** — selecting **multiple** favourites and choosing "Find similar" opens a source
+    picker, then Migrate/Copy **all** of them at once via a foreground `MigrationService`
+    (`BatchMigrateUseCase` auto-matches each manga's best title hit on the chosen source; progress +
+    summary notification). A single selection still opens the interactive screen with manual match.
 
   _Known gap (follow-up):_ page-level **bookmarks** and per-manga reader prefs are still not carried
   across a migration — doing it meaningfully needs chapter-number matching (bookmarks reference the
