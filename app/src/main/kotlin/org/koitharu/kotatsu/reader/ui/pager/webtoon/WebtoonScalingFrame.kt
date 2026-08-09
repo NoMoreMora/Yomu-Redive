@@ -175,7 +175,10 @@ class WebtoonScalingFrame @JvmOverloads constructor(
 		// Restore the zoom previously used for this width. This runs both on an in-place resize
 		// and on a freshly (re)created view — a foldable recreates the reader on fold/unfold, so
 		// here oldw == 0 while zoomByWidth (file-scoped) still holds the pre-fold zoom.
-		if (w > 0 && w != oldw && isZoomEnable && childCount > 0) {
+		// Skip a freshly (re)created view (oldw == 0) that has no saved zoom for this width, so the
+		// reader's own default webtoon zoom is preserved on first open. Otherwise restore the
+		// remembered zoom (or fit, on an in-place resize with no memory).
+		if (w > 0 && w != oldw && isZoomEnable && childCount > 0 && (oldw > 0 || zoomByWidth.containsKey(w))) {
 			val remembered = zoomByWidth[w] ?: 1f
 			DebugLog.d("WebtoonScalingFrame.onSizeChanged w=$w oldw=$oldw scale=$scale -> restore $remembered (known widths=${zoomByWidth.keys})")
 			if (!scale.isNaN() && scale != 1f) {
