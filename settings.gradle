@@ -28,5 +28,17 @@ dependencyResolutionManagement {
 	}
 }
 
+// Parser development (Path 3): when a local clone of the parsers fork sits next to this project,
+// build against it directly for instant edits. On a clean machine / CI the folder is absent, so
+// the app falls back to the JitPack dependency (com.github.NoMoreMora:yomu-redive-parsers).
+def localParsers = file('../yomu-redive-parsers')
+if (localParsers.exists()) {
+	includeBuild(localParsers) {
+		dependencySubstitution {
+			substitute module('com.github.NoMoreMora:yomu-redive-parsers') using project(':')
+		}
+	}
+}
+
 include ':app'
 rootProject.name = "Yomu-Redive"
