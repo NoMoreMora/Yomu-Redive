@@ -65,10 +65,30 @@ class WebtoonScalingFrame @JvmOverloads constructor(
 	var isZoomEnable = false
 		set(value) {
 			field = value
-			if (scale != 1f) {
+			// Reset to fit only when zoom is turned OFF. This setter is re-assigned on every reader
+			// recreation (e.g. folding, via the isWebtoonZooEnabled observer); resetting on re-enable
+			// would wipe a per-screen zoom that onSizeChanged just restored.
+			if (!value && scale != 1f) {
 				scaleChild(1f, halfWidth, halfHeight)
 			}
 		}
+
+	private var defaultZoom = 1f
+
+	/**
+	 * The reader's default webtoon zoom. Applied only when the current screen width has no saved
+	 * zoom, so it never overrides a per-screen zoom restored after a fold/unfold.
+	 */
+	fun setDefaultZoom(value: Float) {
+		defaultZoom = value
+		if (width > 0 && isZoomEnable && childCount > 0 && !zoomByWidth.containsKey(width) && value != scale) {
+			DebugLog.d("WebtoonScalingFrame.setDefaultZoom apply $value at width=$width")
+			scaleChild(value, halfWidth, halfHeight)
+			onPostScale(invalidateLayout = true)
+		} else {
+			DebugLog.d("WebtoonScalingFrame.setDefaultZoom store $value (width=$width hasSaved=${zoomByWidth.containsKey(width)})")
+		}
+	}
 
 	var zoom: Float
 		get() = scale

@@ -67,7 +67,7 @@ class WebtoonReaderFragment : BaseReaderFragment<FragmentReaderWebtoonBinding>()
 			binding.frame.isZoomEnable = it
 		}
 		viewModel.defaultWebtoonZoomOut.take(1).observe(viewLifecycleOwner) {
-			binding.frame.zoom = 1f - it
+			binding.frame.setDefaultZoom(1f - it)
 		}
 		viewModel.isWebtoonGapsEnabled.observe(viewLifecycleOwner) {
 			val rv = binding.recyclerView
