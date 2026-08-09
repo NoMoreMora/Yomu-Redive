@@ -256,6 +256,8 @@ abstract class FavouritesDao : MangaQueryBuilder.ConditionCallback {
 		ListSortOrder.ALPHABETIC -> "manga.title ASC"
 		ListSortOrder.ALPHABETIC_REVERSE -> "manga.title DESC"
 		ListSortOrder.NEW_CHAPTERS -> "IFNULL((SELECT chapters_new FROM tracks WHERE tracks.manga_id = manga.manga_id), 0) DESC"
+		ListSortOrder.UNREAD_CHAPTERS -> "IFNULL((SELECT chapters_new FROM tracks WHERE tracks.manga_id = manga.manga_id), 0) DESC"
+		ListSortOrder.UNREAD_CHAPTERS_LEAST -> "IFNULL((SELECT chapters_new FROM tracks WHERE tracks.manga_id = manga.manga_id), 0) ASC"
 		ListSortOrder.PROGRESS -> "IFNULL((SELECT percent FROM history WHERE history.manga_id = manga.manga_id), 0) DESC"
 		ListSortOrder.UNREAD -> "IFNULL((SELECT percent FROM history WHERE history.manga_id = manga.manga_id), 0) ASC"
 		ListSortOrder.LAST_READ -> "IFNULL((SELECT updated_at FROM history WHERE history.manga_id = manga.manga_id), 0) DESC"
