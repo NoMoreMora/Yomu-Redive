@@ -34,4 +34,11 @@
 		android:title="@string/chapters_grid_view"
 		app:showAsAction="never" />
 
+	<item
+		android:id="@+id/action_hide_partial"
+		android:checkable="true"
+		android:orderInCategory="40"
+		android:title="@string/hide_partial_chapters"
+		app:showAsAction="never" />
+
 </menu>

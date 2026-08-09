@@ -89,6 +89,12 @@ abstract class ChaptersPagesViewModel(
 		valueProducer = { isChaptersGridView },
 	)
 
+	val isHidePartialChapters = settings.observeAsStateFlow(
+		scope = viewModelScope + Dispatchers.Default,
+		key = AppSettings.KEY_HIDE_PARTIAL_CHAPTERS,
+		valueProducer = { isHidePartialChapters },
+	)
+
 	val isDownloadedOnly = MutableStateFlow(false)
 
 	val newChaptersCount = mangaDetails.flatMapLatest { d ->
@@ -142,8 +148,16 @@ abstract class ChaptersPagesViewModel(
 		},
 		isChaptersReversed,
 		chaptersQuery,
-	) { list, reversed, query ->
-		(if (reversed) list.asReversed() else list).filterSearch(query)
+		isHidePartialChapters,
+	) { list, reversed, query, hidePartial ->
+		// Hide "partial" chapters — those with a fractional number like 6.1 or 6.5 (a whole chapter
+		// keeps number 6.0). Chapters with no number (0) stay visible. See setHidePartialChapters.
+		val base = if (hidePartial) {
+			list.filterNot { val n = it.chapter.number; n > 0f && n != n.toInt().toFloat() }
+		} else {
+			list
+		}
+		(if (reversed) base.asReversed() else base).filterSearch(query)
 	}.stateIn(viewModelScope + Dispatchers.Default, SharingStarted.Eagerly, emptyList())
 
 	val quickFilter = combine(
@@ -176,6 +190,10 @@ abstract class ChaptersPagesViewModel(
 
 	fun setChaptersInGridView(newValue: Boolean) {
 		settings.isChaptersGridView = newValue
+	}
+
+	fun setHidePartialChapters(newValue: Boolean) {
+		settings.isHidePartialChapters = newValue
 	}
 
 	fun setSelectedBranch(branch: String?) {

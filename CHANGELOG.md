@@ -5,6 +5,17 @@ fork of [Kotatsu-Redo](https://github.com/Kotatsu-Redo/Kotatsu-Redo). Releases u
 `major.minor.patch` numbers continuing the upstream line the fork forked from, so the in-app
 GitHub-releases updater treats each one as a normal upgrade.
 
+## [9.8.3-beta3] - 2026-08-09
+
+Development (pre-release) build for the in-app **Development** update channel.
+
+### Added
+
+- **Hide partial chapters** toggle (details page → chapters menu, next to Reverse / Grid view):
+  hides chapters with a fractional number like 6.1 or 6.5, keeping only whole-numbered chapters.
+  Useful when a source posts chapter parts (6.1, 6.2 …) and later replaces them with the full
+  chapter 6. Off by default; whole chapters and un-numbered chapters are always shown.
+
 ## [9.8.3-beta2] - 2026-08-09
 
 Development (pre-release) build for the in-app **Development** update channel.

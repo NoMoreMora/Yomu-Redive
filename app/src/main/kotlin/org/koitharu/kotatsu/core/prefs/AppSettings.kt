@@ -308,6 +308,10 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 		get() = prefs.getBoolean(KEY_GRID_VIEW_CHAPTERS, false)
 		set(value) = prefs.edit { putBoolean(KEY_GRID_VIEW_CHAPTERS, value) }
 
+	var isHidePartialChapters: Boolean
+		get() = prefs.getBoolean(KEY_HIDE_PARTIAL_CHAPTERS, false)
+		set(value) = prefs.edit { putBoolean(KEY_HIDE_PARTIAL_CHAPTERS, value) }
+
 	val zoomMode: ZoomMode
 		get() = prefs.getEnumValue(KEY_ZOOM_MODE, ZoomMode.FIT_CENTER)
 
@@ -854,6 +858,7 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 		const val KEY_PROGRESS_INDICATORS = "progress_indicators"
 		const val KEY_REVERSE_CHAPTERS = "reverse_chapters"
 		const val KEY_GRID_VIEW_CHAPTERS = "grid_view_chapters"
+		const val KEY_HIDE_PARTIAL_CHAPTERS = "hide_partial_chapters"
 		const val KEY_INCOGNITO_NSFW = "incognito_nsfw"
 		const val KEY_PAGES_NUMBERS = "pages_numbers"
 		const val KEY_SCREENSHOTS_POLICY = "screenshots_policy"
