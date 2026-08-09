@@ -62,6 +62,7 @@ class SourceSettings(context: Context, source: MangaSource) : MangaSourceConfig 
 				?: key.defaultValue
 
 			is ConfigKey.ShowSuspiciousContent -> prefs.getBoolean(key.key, key.defaultValue)
+			is ConfigKey.ShowNsfwContent -> prefs.getBoolean(key.key, key.defaultValue)
 			is ConfigKey.SplitByTranslations -> prefs.getBoolean(key.key, key.defaultValue)
 			is ConfigKey.PreferredImageServer -> prefs.getString(key.key, key.defaultValue)?.nullIfEmpty()
 			is ConfigKey.DisableUpdateChecking -> prefs.getBoolean(key.key, key.defaultValue)
@@ -73,6 +74,7 @@ class SourceSettings(context: Context, source: MangaSource) : MangaSourceConfig 
 		when (key) {
 			is ConfigKey.Domain -> putString(key.key, value as String?)
 			is ConfigKey.ShowSuspiciousContent -> putBoolean(key.key, value as Boolean)
+			is ConfigKey.ShowNsfwContent -> putBoolean(key.key, value as Boolean)
 			is ConfigKey.UserAgent -> putString(key.key, (value as String?)?.sanitizeHeaderValue())
 			is ConfigKey.SplitByTranslations -> putBoolean(key.key, value as Boolean)
 			is ConfigKey.PreferredImageServer -> putString(key.key, value as String? ?: "")

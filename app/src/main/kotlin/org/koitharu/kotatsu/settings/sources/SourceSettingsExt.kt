@@ -81,6 +81,14 @@ private fun PreferenceFragmentCompat.addPreferencesFromParserRepository(reposito
 				}
 			}
 
+			is ConfigKey.ShowNsfwContent -> {
+				SwitchPreferenceCompat(screen.context).apply {
+					setDefaultValue(key.defaultValue)
+					setTitle(R.string.show_nsfw_content)
+					setSummary(R.string.show_nsfw_content_summary)
+				}
+			}
+
 			is ConfigKey.SplitByTranslations -> {
 				SwitchPreferenceCompat(screen.context).apply {
 					setDefaultValue(key.defaultValue)
