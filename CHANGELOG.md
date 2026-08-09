@@ -5,6 +5,18 @@ fork of [Kotatsu-Redo](https://github.com/Kotatsu-Redo/Kotatsu-Redo). Releases u
 `major.minor.patch` numbers continuing the upstream line the fork forked from, so the in-app
 GitHub-releases updater treats each one as a normal upgrade.
 
+## [9.8.3-beta2] - 2026-08-09
+
+Development (pre-release) build for the in-app **Development** update channel.
+
+### Fixed
+
+- **MangaK.io NSFW toggle now works.** It previously tagged adult titles as ADULT and filtered on
+  that rating, which let the app-wide "Hide NSFW content" setting strip them even when the per-source
+  toggle was on — so turning it on revealed nothing. The toggle now filters on genre tags and leaves
+  items unrated, making it the sole control for MangaK.io NSFW visibility regardless of the global
+  setting. Also widened the adult genre set (adds ecchi, doujinshi, soft-yaoi, adult-content).
+
 ## [9.8.3-beta1] - 2026-08-09
 
 Development (pre-release) build for the in-app **Development** update channel.
