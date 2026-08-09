@@ -18,7 +18,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import org.koitharu.kotatsu.R
 import org.koitharu.kotatsu.core.os.NetworkState
+import org.koitharu.kotatsu.core.prefs.AppSettings
 import org.koitharu.kotatsu.core.ui.list.lifecycle.RecyclerViewLifecycleDispatcher
+import org.koitharu.kotatsu.core.util.DebugLog
 import org.koitharu.kotatsu.core.util.ext.firstVisibleItemPosition
 import org.koitharu.kotatsu.core.util.ext.observe
 import org.koitharu.kotatsu.core.util.ext.removeItemDecoration
@@ -40,6 +42,9 @@ class WebtoonReaderFragment : BaseReaderFragment<FragmentReaderWebtoonBinding>()
 
 	@Inject
 	lateinit var pageLoader: PageLoader
+
+	@Inject
+	lateinit var appSettings: AppSettings
 
 	private val scrollInterpolator = DecelerateInterpolator()
 
@@ -142,6 +147,12 @@ class WebtoonReaderFragment : BaseReaderFragment<FragmentReaderWebtoonBinding>()
 				it.chapterId == pendingState.chapterId && it.index == pendingState.page
 			}
 			setItems.join()
+			if (appSettings.isDebugLoggingEnabled) {
+				DebugLog.d(
+					"Webtoon onPagesChanged restore pos=$position chapter=${pendingState.chapterId} " +
+						"page=${pendingState.page} scroll=${pendingState.scroll} resumeFix=${appSettings.isReaderResumeFixEnabled}",
+				)
+			}
 			if (position != -1) {
 				with(requireViewBinding().recyclerView) {
 					firstVisibleItemPosition = position
@@ -161,13 +172,28 @@ class WebtoonReaderFragment : BaseReaderFragment<FragmentReaderWebtoonBinding>()
 	}
 
 	override fun getCurrentState(): ReaderState? = viewBinding?.run {
-		val currentItem = recyclerView.findCurrentPagePosition()
+		// The reader is restored via firstVisibleItemPosition (page pinned to the TOP of the
+		// viewport). Historically the state was captured from the bottom-center page instead, so
+		// resuming jumped ahead by roughly one screenful — very visible on large/foldable displays
+		// where many pages fit. When the resume fix is on, capture the top page to stay symmetric.
+		val currentItem = if (appSettings.isReaderResumeFixEnabled) {
+			recyclerView.firstVisibleItemPosition
+		} else {
+			recyclerView.findCurrentPagePosition()
+		}
 		val adapter = recyclerView.adapter as? BaseReaderAdapter<*>
 		val page = adapter?.getItemOrNull(currentItem) ?: return@run null
+		val scroll = (recyclerView.findViewHolderForAdapterPosition(currentItem) as? WebtoonHolder)?.getScrollY() ?: 0
+		if (appSettings.isDebugLoggingEnabled) {
+			DebugLog.d(
+				"Webtoon getCurrentState pos=$currentItem chapter=${page.chapterId} page=${page.index} " +
+					"scroll=$scroll resumeFix=${appSettings.isReaderResumeFixEnabled}",
+			)
+		}
 		ReaderState(
 			chapterId = page.chapterId,
 			page = page.index,
-			scroll = (recyclerView.findViewHolderForAdapterPosition(currentItem) as? WebtoonHolder)?.getScrollY() ?: 0,
+			scroll = scroll,
 		)
 	}
 

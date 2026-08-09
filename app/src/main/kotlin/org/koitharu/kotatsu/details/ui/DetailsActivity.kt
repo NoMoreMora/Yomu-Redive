@@ -25,6 +25,7 @@ import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import androidx.core.view.updatePaddingRelative
+import androidx.lifecycle.lifecycleScope
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.transition.TransitionManager
 import coil3.ImageLoader
@@ -38,13 +39,16 @@ import coil3.target.ImageViewTarget
 import coil3.transform.RoundedCornersTransformation
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.chip.Chip
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import org.koitharu.kotatsu.R
 import org.koitharu.kotatsu.bookmarks.domain.Bookmark
 import org.koitharu.kotatsu.core.image.CoilMemoryCacheKey
@@ -94,6 +98,7 @@ import org.koitharu.kotatsu.databinding.ActivityDetailsBinding
 import org.koitharu.kotatsu.databinding.LayoutDetailsTableBinding
 import org.koitharu.kotatsu.details.data.MangaDetails
 import org.koitharu.kotatsu.details.data.ReadingTime
+import org.koitharu.kotatsu.details.domain.DescriptionTranslator
 import org.koitharu.kotatsu.details.service.MangaPrefetchService
 import org.koitharu.kotatsu.details.ui.model.ChapterListItem
 import org.koitharu.kotatsu.details.ui.model.HistoryInfo
@@ -110,7 +115,6 @@ import org.koitharu.kotatsu.main.ui.owners.BottomSheetOwner
 import org.koitharu.kotatsu.parsers.model.ContentRating
 import org.koitharu.kotatsu.parsers.model.Manga
 import org.koitharu.kotatsu.parsers.model.MangaTag
-import org.koitharu.kotatsu.parsers.util.ifNullOrEmpty
 import org.koitharu.kotatsu.parsers.util.nullIfEmpty
 import org.koitharu.kotatsu.parsers.util.toTitleCase
 import org.koitharu.kotatsu.scrobbling.common.domain.model.ScrobblingInfo
@@ -138,6 +142,14 @@ class DetailsActivity :
 
 	@Inject
 	lateinit var settings: AppSettings
+
+	@Inject
+	lateinit var descriptionTranslator: DescriptionTranslator
+
+	private var descriptionOriginal: CharSequence = ""
+	private var descriptionTranslated: String? = null
+	private var isShowingTranslatedDescription = false
+	private var translateJob: Job? = null
 
 	private val viewModel: DetailsViewModel by viewModels()
 	private lateinit var menuProvider: DetailsMenuProvider
@@ -419,6 +431,36 @@ class DetailsActivity :
 		}
 	}
 
+	private fun bindDescription(description: CharSequence?) {
+		translateJob?.cancel()
+		descriptionTranslated = null
+		isShowingTranslatedDescription = false
+		descriptionOriginal = description?.takeIf { it.isNotBlank() } ?: getString(R.string.no_description)
+		viewBinding.textViewDescription.text = descriptionOriginal
+		viewBinding.textViewDescription.setOnClickListener(null)
+		viewBinding.textViewDescription.isClickable = false
+		if (settings.isTranslateDescriptionsEnabled && !description.isNullOrBlank()) {
+			translateJob = lifecycleScope.launch {
+				val translated = descriptionTranslator.translateToDeviceLanguage(description.toString())
+				if (translated != null && translated.isNotBlank() && translated != description.toString()) {
+					descriptionTranslated = translated
+					isShowingTranslatedDescription = true
+					viewBinding.textViewDescription.text = translated
+					viewBinding.textViewDescription.setOnClickListener { toggleDescriptionTranslation() }
+					Snackbar.make(viewBinding.textViewDescription, R.string.translated_label, Snackbar.LENGTH_SHORT)
+						.setAction(R.string.show_original) { toggleDescriptionTranslation() }
+						.show()
+				}
+			}
+		}
+	}
+
+	private fun toggleDescriptionTranslation() {
+		val translated = descriptionTranslated ?: return
+		isShowingTranslatedDescription = !isShowingTranslatedDescription
+		viewBinding.textViewDescription.text = if (isShowingTranslatedDescription) translated else descriptionOriginal
+	}
+
 	private fun onMangaUpdated(details: MangaDetails) {
 		val manga = details.toManga()
 		with(viewBinding) {
@@ -429,7 +471,7 @@ class DetailsActivity :
 			textViewSubtitle.textAndVisible = null
 			textViewNsfw16.isVisible = manga.contentRating == ContentRating.SUGGESTIVE
 			textViewNsfw18.isVisible = manga.contentRating == ContentRating.ADULT
-			textViewDescription.text = details.description.ifNullOrEmpty { getString(R.string.no_description) }
+			bindDescription(details.description)
 		}
 		with(infoBinding) {
 			val translation = details.getLocale()

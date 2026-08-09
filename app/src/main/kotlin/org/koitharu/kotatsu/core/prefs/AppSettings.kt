@@ -122,6 +122,12 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 	val isExperimentalFeaturesEnabled: Boolean
 		get() = prefs.getBoolean(KEY_EXPERIMENTAL_FEATURES, false)
 
+	val isTranslateDescriptionsEnabled: Boolean
+		get() = prefs.getBoolean(KEY_TRANSLATE_DESCRIPTIONS, false)
+
+	val isReaderResumeFixEnabled: Boolean
+		get() = prefs.getBoolean(KEY_READER_RESUME_FIX, false)
+
 	val isDebugLoggingEnabled: Boolean
 		get() = prefs.getBoolean(KEY_DEBUG_LOGGING, false)
 
@@ -940,6 +946,8 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 		const val KEY_COVER_ART_CACHE = "cover_art_cache"
 		const val KEY_FAVOURITES_CACHE = "favourites_cache"
 		const val KEY_EXPERIMENTAL_FEATURES = "experimental_features"
+		const val KEY_TRANSLATE_DESCRIPTIONS = "exp_translate_descriptions"
+		const val KEY_READER_RESUME_FIX = "exp_reader_resume_fix"
 		const val KEY_DEBUG_LOGGING = "debug_logging"
 		const val KEY_EXPORT_LOG = "export_log"
 		const val KEY_COLLAPSE_DESCRIPTION = "description_collapse"

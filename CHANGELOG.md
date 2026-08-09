@@ -5,6 +5,39 @@ fork of [Kotatsu-Redo](https://github.com/Kotatsu-Redo/Kotatsu-Redo). Releases u
 `major.minor.patch` numbers continuing the upstream line the fork forked from, so the in-app
 GitHub-releases updater treats each one as a normal upgrade.
 
+## [9.8.3-beta1] - 2026-08-09
+
+Development (pre-release) build for the in-app **Development** update channel.
+
+### Added
+
+- **Developer options** (Settings → Developer options): debug logging with an exportable log
+  file for troubleshooting, plus an **Experimental features** section for opt-in unstable features.
+- **Auto-translate descriptions** (experimental): translates a manga's description into your device
+  language on the details page, with a **Show original** toggle. Runs on-device — it downloads a
+  small language model on first use, then works offline. Enable under Developer options →
+  Experimental features.
+- **Sort Favourites by unread chapters** (most / fewest), using tracked new-chapter counts.
+- **MangaK.io NSFW toggle** (source settings): hides NSFW manga; disabled by default.
+
+### Changed
+
+- **New mascot launcher icon** and refined app name (**Yomu Re:Dive**).
+- **Consolidated sources**: merged 13 MangaReader-based sources (MangaPuma, MangaForest, BoxManhwa,
+  MangaSaga, MangaFab, MangaMonk, MangaCute, MangaXYZ, MangaBuddy, MangaBuddyMe, ManhuaSite,
+  MangaSpin, ManhuaNow) into **MangaK.io** and removed them from the sources list.
+- Manga sources now build from the **yomu-redive-parsers** fork (local composite build, JitPack for
+  releases), so source-specific options can be maintained while still merging upstream parser
+  updates.
+
+### Fixed
+
+- **Continuous-reader zoom retention**: the cover screen no longer loses its zoom level after
+  folding/unfolding, and the default zoom is preserved on first open.
+- **Webtoon resume fix** (experimental): returning to a continuous-reader chapter no longer skips
+  ahead by a screenful on large/foldable displays — the position is now captured from the top of the
+  screen, matching how it is restored. Enable under Developer options → Experimental features.
+
 ## [9.8.2] - 2026-08-07
 
 First versioned Yomu-Re:dive release. Forked from Kotatsu-Redo `9.8.1` (`cb430d3`).

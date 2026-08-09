@@ -743,6 +743,12 @@
     <string name="developer_options">Developer options</string>
     <string name="experimental_features">Experimental features</string>
     <string name="experimental_features_summary">Enable in-development features that may be unstable</string>
+    <string name="translate_descriptions">Auto-translate descriptions</string>
+    <string name="translate_descriptions_summary">Translate manga descriptions to your device language on the details page (downloads a language model on first use)</string>
+    <string name="show_original">Show original</string>
+    <string name="translated_label">Translated</string>
+    <string name="reader_resume_fix">Webtoon resume fix</string>
+    <string name="reader_resume_fix_summary">Resume webtoon chapters from the top of the screen instead of the bottom, so returning to a chapter no longer skips ahead a screenful (helps on large/foldable displays)</string>
     <string name="debug_logging">Debug logging</string>
     <string name="debug_logging_summary">Record diagnostic logs in the app. Turn on, reproduce the issue, then export the log.</string>
     <string name="export_log">Export debug log</string>

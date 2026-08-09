@@ -3,12 +3,23 @@
 	xmlns:android="http://schemas.android.com/apk/res/android"
 	android:title="@string/developer_options">
 
-	<SwitchPreferenceCompat
-		android:defaultValue="false"
-		android:icon="@drawable/ic_new"
-		android:key="experimental_features"
-		android:summary="@string/experimental_features_summary"
-		android:title="@string/experimental_features" />
+	<PreferenceCategory android:title="@string/experimental_features">
+
+		<SwitchPreferenceCompat
+			android:defaultValue="false"
+			android:icon="@drawable/ic_language"
+			android:key="exp_translate_descriptions"
+			android:summary="@string/translate_descriptions_summary"
+			android:title="@string/translate_descriptions" />
+
+		<SwitchPreferenceCompat
+			android:defaultValue="false"
+			android:icon="@drawable/ic_read"
+			android:key="exp_reader_resume_fix"
+			android:summary="@string/reader_resume_fix_summary"
+			android:title="@string/reader_resume_fix" />
+
+	</PreferenceCategory>
 
 	<PreferenceCategory android:title="@string/debug">
 

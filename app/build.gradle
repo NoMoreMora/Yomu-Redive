@@ -29,10 +29,10 @@ android {
 		applicationId 'io.github.yomuredive.yomu'
 		minSdk = 23
 		targetSdk = 37
-		versionCode = 2040
-        // Base version. Pass -PversionSuffix=-beta1 to stamp a pre-release build (e.g. 9.8.2-beta1)
+		versionCode = 2041
+        // Base version. Pass -PversionSuffix=-beta1 to stamp a pre-release build (e.g. 9.8.3-beta1)
         // for the in-app "Development" update channel; a plain build stays on the stable channel.
-        versionName = '9.8.2' + (project.findProperty('versionSuffix') ?: '')
+        versionName = '9.8.3' + (project.findProperty('versionSuffix') ?: '')
 		generatedDensities = []
 		testInstrumentationRunner 'org.koitharu.kotatsu.HiltTestRunner'
 		ksp {
@@ -155,6 +155,12 @@ dependencies {
 	implementation("com.github.NoMoreMora:yomu-redive-parsers:$parsersVersion") {
 		exclude group: 'org.json', module: 'json'
 	}
+
+	// On-device translation for manga descriptions (experimental). Offline after model download.
+	//noinspection UseTomlInstead
+	implementation 'com.google.mlkit:translate:17.0.3'
+	//noinspection UseTomlInstead
+	implementation 'com.google.mlkit:language-id:17.0.6'
 
 	coreLibraryDesugaring libs.desugar.jdk.libs
 	implementation libs.kotlin.stdlib

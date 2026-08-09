@@ -148,6 +148,29 @@ This is the focus of the fork. Existing upstream foldable support lives in
   cache. So a favourite's cover art and metadata are **retained until it is un-favourited** (the
   manga row is kept by the favourites FK) and kept current daily. WorkManager's periodic interval
   provides the "once a day" gate; scheduling follows the toggle. Off by default.
+- _Sort Favourites by unread chapters_ (`list/domain/ListSortOrder.kt`,
+  `favourites/data/FavouritesDao.kt`): two new Favourites sort orders — **most** and **fewest**
+  unread — backed by the tracker's `chapters_new` count per manga (0 when untracked).
+- _Developer options + experimental features_ (`settings/DeveloperSettingsFragment.kt`,
+  `res/xml/pref_developer.xml`, `core/util/DebugLog.kt`): a **Settings → Developer options** screen
+  with a **Debug logging** toggle (an in-memory ring buffer mirrored to Logcat under tag
+  `YomuReDive`, gated by `AppSettings.isDebugLoggingEnabled`) and an **Export debug log** action
+  (writes `cacheDir/logs/yomu-redive-log.txt` and shares it via FileProvider). Above it, an
+  **Experimental features** category hosts opt-in unstable toggles (both off by default):
+  - _Auto-translate descriptions_ (`details/domain/DescriptionTranslator.kt`,
+    `details/ui/DetailsActivity.kt`, key `exp_translate_descriptions`): on the details page the
+    description is translated into the device language with ML Kit's on-device translator
+    (`com.google.mlkit:translate` + `language-id`) — the source language is auto-identified, the
+    model is downloaded once then works offline, and a **Show original** affordance (Snackbar action
+    + tapping the description) toggles back. Falls back to the original text on any failure, when the
+    language can't be identified, or when it already matches the target.
+  - _Webtoon resume fix_ (`reader/ui/pager/webtoon/WebtoonReaderFragment.kt`, key
+    `exp_reader_resume_fix`): the continuous reader restores a chapter via `firstVisibleItemPosition`
+    (page pinned to the **top** of the viewport), but `getCurrentState()` historically captured the
+    **bottom-center** page — so resuming jumped ahead by ~one screenful, worst on large/foldable
+    displays where many pages fit at once. With the toggle on, state is captured from the top page,
+    keeping save and restore symmetric. `DebugLog` instrumentation on both the save and restore paths
+    records the position/scroll so an exported device log can confirm the behaviour.
 
 ## Build environment notes
 
