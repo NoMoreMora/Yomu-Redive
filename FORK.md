@@ -213,3 +213,41 @@ For iterating on a device/emulator, skip GitHub entirely and install straight ov
 The debug build installs **side-by-side** with a release install (different applicationId), so you
 can keep a stable copy and a dev copy on the same device. `installRelease` / `installNightly` install
 those variants instead (release needs the signing config from `keystore.properties`).
+
+## Custom manga sources (parser fork)
+
+The built-in manga sources are **not in this repo** — they come from the parsers library, consumed
+via JitPack. This fork uses **`NoMoreMora/yomu-redive-parsers`** (a fork of
+`Kotatsu-Redo/kotatsu-parsers-redo`, which itself tracks `KotatsuApp/kotatsu-parsers`):
+
+```gradle
+// app/build.gradle
+implementation("com.github.NoMoreMora:yomu-redive-parsers:$parsersVersion") { ... }
+```
+
+`parsersVersion` is pinned in `gradle/libs.versions.toml` (`parsers = "<commit hash>"`).
+
+**Fast local editing (composite build).** Clone the fork next to this project as
+`../yomu-redive-parsers`. `settings.gradle` detects it and `includeBuild`s it with a dependency
+substitution, so the app builds against the local parser source — edit a parser, rebuild the app, no
+JitPack round-trip. On a machine without that folder (CI, a fresh clone), the app falls back to the
+JitPack artifact automatically. Clone once with:
+
+```bash
+git clone https://github.com/NoMoreMora/yomu-redive-parsers.git   # run in ../ (Projects/)
+cd yomu-redive-parsers && git remote add upstream https://github.com/Kotatsu-Redo/kotatsu-parsers-redo.git
+```
+
+**Modifying a source.** Edit the parser in `../yomu-redive-parsers/src/...`, rebuild the app to test
+locally. When ready to ship: commit + push the parser change to the fork, then set
+`parsers = "<new short commit hash>"` in `gradle/libs.versions.toml` (JitPack builds that commit for
+release/CI builds).
+
+**Pulling upstream source updates.** In the parsers fork:
+
+```bash
+git fetch upstream && git merge upstream/master   # then push, and bump the hash in libs.versions.toml
+```
+
+So local dev uses the live source, releases pin a JitPack commit, and upstream parser updates arrive
+by merging — the same fork model as the app itself.
