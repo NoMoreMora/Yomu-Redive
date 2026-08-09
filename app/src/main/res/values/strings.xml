@@ -736,6 +736,13 @@
     <string name="cover_art_cache_summary">Keep browsed cover art cached for 5 days and refresh it at most once a day</string>
     <string name="favourites_cache">Keep favourites up to date</string>
     <string name="favourites_cache_summary">Retain cover art and details for favourite manga until removed from favourites, refreshing once a day</string>
+    <string name="developer_options">Developer options</string>
+    <string name="experimental_features">Experimental features</string>
+    <string name="experimental_features_summary">Enable in-development features that may be unstable</string>
+    <string name="debug_logging">Debug logging</string>
+    <string name="debug_logging_summary">Record diagnostic logs in the app. Turn on, reproduce the issue, then export the log.</string>
+    <string name="export_log">Export debug log</string>
+    <string name="export_log_summary">Share the recorded log for troubleshooting</string>
     <string name="sfw">SFW</string>
     <string name="skip_all">Skip all</string>
     <string name="stuck">Stuck</string>

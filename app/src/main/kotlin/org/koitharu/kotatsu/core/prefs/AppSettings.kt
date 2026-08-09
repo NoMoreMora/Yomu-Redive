@@ -119,6 +119,12 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 	val isFavouritesCacheEnabled: Boolean
 		get() = prefs.getBoolean(KEY_FAVOURITES_CACHE, false)
 
+	val isExperimentalFeaturesEnabled: Boolean
+		get() = prefs.getBoolean(KEY_EXPERIMENTAL_FEATURES, false)
+
+	val isDebugLoggingEnabled: Boolean
+		get() = prefs.getBoolean(KEY_DEBUG_LOGGING, false)
+
 	val isDescriptionExpanded: Boolean
 		get() = !prefs.getBoolean(KEY_COLLAPSE_DESCRIPTION, true)
 
@@ -933,6 +939,9 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 		const val KEY_MIGRATION_PREFERRED_SOURCE = "migration_preferred_source"
 		const val KEY_COVER_ART_CACHE = "cover_art_cache"
 		const val KEY_FAVOURITES_CACHE = "favourites_cache"
+		const val KEY_EXPERIMENTAL_FEATURES = "experimental_features"
+		const val KEY_DEBUG_LOGGING = "debug_logging"
+		const val KEY_EXPORT_LOG = "export_log"
 		const val KEY_COLLAPSE_DESCRIPTION = "description_collapse"
 		const val KEY_BACKUP_TG_ENABLED = "backup_periodic_tg_enabled"
 		const val KEY_BACKUP_TG_CHAT = "backup_periodic_tg_chat_id"

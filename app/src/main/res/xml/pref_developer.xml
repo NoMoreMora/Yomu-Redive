@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:title="@string/developer_options">
+
+	<SwitchPreferenceCompat
+		android:defaultValue="false"
+		android:icon="@drawable/ic_new"
+		android:key="experimental_features"
+		android:summary="@string/experimental_features_summary"
+		android:title="@string/experimental_features" />
+
+	<PreferenceCategory android:title="@string/debug">
+
+		<SwitchPreferenceCompat
+			android:defaultValue="false"
+			android:icon="@drawable/ic_info_outline"
+			android:key="debug_logging"
+			android:summary="@string/debug_logging_summary"
+			android:title="@string/debug_logging" />
+
+		<Preference
+			android:icon="@drawable/ic_save"
+			android:key="export_log"
+			android:persistent="false"
+			android:summary="@string/export_log_summary"
+			android:title="@string/export_log" />
+
+	</PreferenceCategory>
+
+</PreferenceScreen>

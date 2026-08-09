@@ -21,6 +21,7 @@ import androidx.core.animation.doOnEnd
 import androidx.core.view.ViewConfigurationCompat
 import org.koitharu.kotatsu.R
 import org.koitharu.kotatsu.core.ui.widgets.ZoomControl
+import org.koitharu.kotatsu.core.util.DebugLog
 import org.koitharu.kotatsu.core.util.ext.getAnimationDuration
 import kotlin.math.roundToInt
 
@@ -28,6 +29,11 @@ private const val MAX_SCALE = 2.5f
 private const val MIN_SCALE = 0.5f
 
 private const val FLING_RANGE = 20_000
+
+// Remembered zoom (scale) per screen width, kept at file scope so it survives the activity
+// recreation a foldable performs when folding / unfolding (that screen-size change recreates the
+// reader). Lets each screen size restore its own last-used zoom instead of resetting to fit.
+private val zoomByWidth = HashMap<Int, Float>()
 
 class WebtoonScalingFrame @JvmOverloads constructor(
 	context: Context,
@@ -55,11 +61,6 @@ class WebtoonScalingFrame @JvmOverloads constructor(
 	private val targetHitRect = Rect()
 	private var animator: ValueAnimator? = null
 	private var pendingScroll = 0
-
-	// Remembered zoom (scale) per screen width, so switching between screens of different
-	// sizes (e.g. folding / unfolding a foldable) restores the zoom previously set for that
-	// screen instead of forcing the reader to be re-zoomed each time.
-	private val zoomByWidth = HashMap<Int, Float>()
 
 	var isZoomEnable = false
 		set(value) {
@@ -165,16 +166,18 @@ class WebtoonScalingFrame @JvmOverloads constructor(
 
 	override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
 		super.onSizeChanged(w, h, oldw, oldh)
-		// Save the zoom set for the previous screen size before switching to the new one.
+		// In-place resize: remember the zoom for the width we're leaving.
 		if (oldw > 0 && oldw != w && !scale.isNaN()) {
 			zoomByWidth[oldw] = scale
 		}
 		halfWidth = w / 2f
 		halfHeight = h / 2f
-		// On a screen-size change restore the zoom previously used for this size (defaulting
-		// to fit) rather than keeping the now-mismatched zoom from the previous screen.
-		if (oldw > 0 && oldw != w && isZoomEnable && childCount > 0) {
+		// Restore the zoom previously used for this width. This runs both on an in-place resize
+		// and on a freshly (re)created view — a foldable recreates the reader on fold/unfold, so
+		// here oldw == 0 while zoomByWidth (file-scoped) still holds the pre-fold zoom.
+		if (w > 0 && w != oldw && isZoomEnable && childCount > 0) {
 			val remembered = zoomByWidth[w] ?: 1f
+			DebugLog.d("WebtoonScalingFrame.onSizeChanged w=$w oldw=$oldw scale=$scale -> restore $remembered (known widths=${zoomByWidth.keys})")
 			if (!scale.isNaN() && scale != 1f) {
 				scaleChild(1f, halfWidth, halfHeight)
 			}
@@ -183,6 +186,16 @@ class WebtoonScalingFrame @JvmOverloads constructor(
 			}
 			onPostScale(invalidateLayout = true)
 		}
+	}
+
+	override fun onDetachedFromWindow() {
+		// Persist the current zoom before the view goes away, so it survives the activity
+		// recreation a foldable performs on fold/unfold (onSizeChanged does not fire on teardown).
+		if (width > 0 && !scale.isNaN()) {
+			zoomByWidth[width] = scale
+			DebugLog.d("WebtoonScalingFrame.onDetachedFromWindow saved width=$width scale=$scale")
+		}
+		super.onDetachedFromWindow()
 	}
 
 	override fun onZoomIn() {

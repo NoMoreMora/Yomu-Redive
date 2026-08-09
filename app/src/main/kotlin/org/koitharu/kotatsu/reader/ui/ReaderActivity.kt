@@ -52,6 +52,7 @@ import org.koitharu.kotatsu.core.ui.dialog.buildAlertDialog
 import org.koitharu.kotatsu.core.ui.dialog.setCheckbox
 import org.koitharu.kotatsu.core.ui.util.MenuInvalidator
 import org.koitharu.kotatsu.core.ui.widgets.ZoomControl
+import org.koitharu.kotatsu.core.util.DebugLog
 import org.koitharu.kotatsu.core.util.IdlingDetector
 import org.koitharu.kotatsu.core.util.ext.getThemeDimensionPixelOffset
 import org.koitharu.kotatsu.core.util.ext.hasGlobalPoint
@@ -129,6 +130,11 @@ class ReaderActivity :
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        DebugLog.d(
+            "ReaderActivity.onCreate recreated=${savedInstanceState != null} " +
+                "size=${resources.displayMetrics.widthPixels}x${resources.displayMetrics.heightPixels} " +
+                "orientation=${resources.configuration.orientation} swDp=${resources.configuration.smallestScreenWidthDp}",
+        )
         setContentView(ActivityReaderBinding.inflate(layoutInflater))
         readerManager = ReaderManager(supportFragmentManager, viewBinding.container, settings)
         einkFlashView = createEInkFlashView()
@@ -615,6 +621,7 @@ class ReaderActivity :
                 if (unfolded != isFoldUnfolded || bookPosture != isFoldBookPosture) {
                     isFoldUnfolded = unfolded
                     isFoldBookPosture = bookPosture
+                    DebugLog.d("ReaderActivity fold change: state=${fold?.state} hinge=${fold?.orientation} unfolded=$unfolded bookPosture=$bookPosture")
                     applyDoubleModeAuto()
                 }
             }
