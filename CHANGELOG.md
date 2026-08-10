@@ -5,6 +5,17 @@ fork of [Kotatsu-Redo](https://github.com/Kotatsu-Redo/Kotatsu-Redo). Releases u
 `major.minor.patch` numbers continuing the upstream line the fork forked from, so the in-app
 GitHub-releases updater treats each one as a normal upgrade.
 
+## [9.8.3-beta4] - 2026-08-09
+
+Development (pre-release) build for the in-app **Development** update channel.
+
+### Changed
+
+- **Hide partial chapters** now also applies while **reading**: with the toggle on, the reader skips
+  fractional chapters (6.1, 6.5, …) when auto-advancing and on next/previous, so it goes straight
+  from chapter 6 to 7 — matching the chapter list (previously the reader still opened them).
+- Renamed the toggle from "Hide partial chapters (.5)" to just **Hide partial chapters**.
+
 ## [9.8.3-beta3] - 2026-08-09
 
 Development (pre-release) build for the in-app **Development** update channel.

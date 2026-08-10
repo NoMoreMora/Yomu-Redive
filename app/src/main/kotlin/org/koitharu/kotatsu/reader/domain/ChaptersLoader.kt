@@ -7,8 +7,10 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.koitharu.kotatsu.core.exceptions.resolve.CaptchaAutoResolveCoordinator
 import org.koitharu.kotatsu.core.parser.MangaRepository
+import org.koitharu.kotatsu.core.prefs.AppSettings
 import org.koitharu.kotatsu.details.data.MangaDetails
 import org.koitharu.kotatsu.parsers.model.MangaChapter
+import org.koitharu.kotatsu.reader.data.adjacentChapter
 import org.koitharu.kotatsu.parsers.model.MangaPage
 import org.koitharu.kotatsu.reader.ui.pager.ReaderPage
 import javax.inject.Inject
@@ -19,6 +21,7 @@ private const val PAGES_TRIM_THRESHOLD = 120
 class ChaptersLoader @Inject constructor(
 	private val mangaRepositoryFactory: MangaRepository.Factory,
 	private val captchaAutoResolveCoordinator: CaptchaAutoResolveCoordinator,
+	private val settings: AppSettings,
 ) {
 
 	private val chapters = LongSparseArray<MangaChapter>()
@@ -36,11 +39,13 @@ class ChaptersLoader @Inject constructor(
 	}
 
 	suspend fun loadPrevNextChapter(manga: MangaDetails, currentId: Long, isNext: Boolean): Boolean {
-		val chapters = manga.allChapters
-		val predicate: (MangaChapter) -> Boolean = { it.id == currentId }
-		val index = if (isNext) chapters.indexOfFirst(predicate) else chapters.indexOfLast(predicate)
-		if (index == -1) return false
-		val newChapter = chapters.getOrNull(if (isNext) index + 1 else index - 1) ?: return false
+		// When "hide partial chapters" is on, skip fractional chapters (6.1, 6.5) while auto-advancing
+		// so the reader goes straight from chapter 6 to 7, matching the chapter list.
+		val newChapter = manga.allChapters.adjacentChapter(
+			currentId = currentId,
+			delta = if (isNext) 1 else -1,
+			skipPartial = settings.isHidePartialChapters,
+		) ?: return false
 		val newPages = loadChapter(newChapter.id, mayStartVerification = false)
 		mutex.withLock {
 			if (chapterPages.chaptersSize > 1) {

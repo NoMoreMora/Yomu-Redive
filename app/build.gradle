@@ -29,7 +29,7 @@ android {
 		applicationId 'io.github.yomuredive.yomu'
 		minSdk = 23
 		targetSdk = 37
-		versionCode = 2043
+		versionCode = 2044
         // Base version. Pass -PversionSuffix=-beta1 to stamp a pre-release build (e.g. 9.8.3-beta1)
         // for the in-app "Development" update channel; a plain build stays on the stable channel.
         versionName = '9.8.3' + (project.findProperty('versionSuffix') ?: '')

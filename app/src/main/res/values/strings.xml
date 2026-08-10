@@ -172,7 +172,7 @@
     <string name="check_for_new_chapters">Check for new chapters</string>
     <string name="reverse">Reverse</string>
     <string name="chapters_grid_view">Grid view</string>
-    <string name="hide_partial_chapters">Hide partial chapters (.5)</string>
+    <string name="hide_partial_chapters">Hide partial chapters</string>
     <string name="sign_in">Sign in</string>
     <string name="auth_required">Sign in to view this content</string>
     <string name="default_s">Default: %s</string>

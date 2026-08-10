@@ -45,6 +45,7 @@ import org.koitharu.kotatsu.local.domain.DeleteLocalMangaUseCase
 import org.koitharu.kotatsu.local.domain.model.LocalManga
 import org.koitharu.kotatsu.parsers.model.Manga
 import org.koitharu.kotatsu.parsers.model.MangaState
+import org.koitharu.kotatsu.reader.data.isPartial
 import org.koitharu.kotatsu.reader.ui.ReaderActivity
 import org.koitharu.kotatsu.reader.ui.ReaderState
 import org.koitharu.kotatsu.reader.ui.ReaderViewModel
@@ -150,13 +151,9 @@ abstract class ChaptersPagesViewModel(
 		chaptersQuery,
 		isHidePartialChapters,
 	) { list, reversed, query, hidePartial ->
-		// Hide "partial" chapters — those with a fractional number like 6.1 or 6.5 (a whole chapter
-		// keeps number 6.0). Chapters with no number (0) stay visible. See setHidePartialChapters.
-		val base = if (hidePartial) {
-			list.filterNot { val n = it.chapter.number; n > 0f && n != n.toInt().toFloat() }
-		} else {
-			list
-		}
+		// Hide "partial" chapters — those with a fractional number like 6.1 or 6.5. Whole chapters
+		// (6.0) and un-numbered chapters (specials/extras) stay visible. See setHidePartialChapters.
+		val base = if (hidePartial) list.filterNot { it.chapter.isPartial() } else list
 		(if (reversed) base.asReversed() else base).filterSearch(query)
 	}.stateIn(viewModelScope + Dispatchers.Default, SharingStarted.Eagerly, emptyList())
 

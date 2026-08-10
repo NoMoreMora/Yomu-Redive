@@ -69,6 +69,7 @@ import org.koitharu.kotatsu.parsers.model.MangaPage
 import org.koitharu.kotatsu.parsers.util.ifNullOrEmpty
 import org.koitharu.kotatsu.parsers.util.runCatchingCancellable
 import org.koitharu.kotatsu.parsers.util.sizeOrZero
+import org.koitharu.kotatsu.reader.data.adjacentChapter
 import org.koitharu.kotatsu.reader.domain.ChaptersLoader
 import org.koitharu.kotatsu.reader.domain.DetectReaderModeUseCase
 import org.koitharu.kotatsu.reader.domain.PageLoader
@@ -321,13 +322,12 @@ class ReaderViewModel @Inject constructor(
             prevJob?.cancelAndJoin()
             val prevState = readingState.requireValue()
             val newChapterId = if (delta != 0) {
-                val allChapters = mangaDetails.requireValue().allChapters
-                var index = allChapters.indexOfFirst { x -> x.id == prevState.chapterId }
-                if (index < 0) {
-                    return@launchLoadingJob
-                }
-                index += delta
-                (allChapters.getOrNull(index) ?: return@launchLoadingJob).id
+                // Skip partial chapters (6.1, 6.5) when the "hide partial chapters" setting is on.
+                mangaDetails.requireValue().allChapters.adjacentChapter(
+                    currentId = prevState.chapterId,
+                    delta = delta,
+                    skipPartial = settings.isHidePartialChapters,
+                )?.id ?: return@launchLoadingJob
             } else {
                 prevState.chapterId
             }
