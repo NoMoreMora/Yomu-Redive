@@ -361,6 +361,10 @@
 			android:foregroundServiceType="dataSync"
 			android:label="@string/restoring_backup" />
 		<service
+			android:name="org.koitharu.kotatsu.backups.ui.restore.TachiyomiImportService"
+			android:foregroundServiceType="dataSync"
+			android:label="@string/import_tachiyomi" />
+		<service
 			android:name="org.koitharu.kotatsu.local.ui.ImportService"
 			android:foregroundServiceType="dataSync"
 			android:label="@string/importing_manga" />

@@ -18,6 +18,14 @@
         android:summary="@string/restore_summary"
         android:title="@string/restore_backup" />
 
+    <Preference
+        android:icon="@drawable/ic_backup_restore"
+        android:key="import_tachiyomi"
+        android:persistent="false"
+        android:summary="@string/import_tachiyomi_summary"
+        android:title="@string/import_tachiyomi"
+        app:allowDividerAbove="true" />
+
     <PreferenceScreen
         android:fragment="org.koitharu.kotatsu.backups.ui.periodical.PeriodicalBackupSettingsFragment"
         android:icon="@drawable/ic_timer_run"

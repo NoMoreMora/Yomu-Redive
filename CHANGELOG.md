@@ -5,6 +5,14 @@ fork of [Kotatsu-Redo](https://github.com/Kotatsu-Redo/Kotatsu-Redo). Releases u
 `major.minor.patch` numbers continuing the upstream line the fork forked from, so the in-app
 GitHub-releases updater treats each one as a normal upgrade.
 
+## [9.8.4-beta1] - 2026-08-10
+
+Development (pre-release) build for the in-app **Development** update channel.
+
+- Import a Tachiyomi / TachiyomiSY / Mihon `.tachibk` backup (Settings → Backup & Restore). Imports
+  your library even when the source isn't available here and flags those manga for source
+  replacement (resolve with Migration). Part 1: library + categories; reading progress comes later.
+
 ## [9.8.3] - 2026-08-10
 
 Stable release consolidating the 9.8.3 development builds.

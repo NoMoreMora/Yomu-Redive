@@ -442,6 +442,8 @@
     <string name="network">Network</string>
     <string name="data_and_privacy">Data and privacy</string>
     <string name="restore_summary">Restore previously created backup</string>
+    <string name="import_tachiyomi">Import from Tachiyomi backup</string>
+    <string name="import_tachiyomi_summary">Import your library from a Tachiyomi / TachiyomiSY / Mihon .tachibk backup. Manga are imported even when their source isn\'t available here and flagged for source replacement — resolve them afterwards with Migration.</string>
     <string name="webtoon_zoom_summary">Allow zoom in gesture in webtoon mode</string>
     <string name="pull_to_prev_chapter">Release to open previous chapter</string>
     <string name="pull_to_next_chapter">Release to open next chapter</string>

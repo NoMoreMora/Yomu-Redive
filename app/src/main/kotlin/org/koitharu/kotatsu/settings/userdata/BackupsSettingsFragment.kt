@@ -12,6 +12,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import org.koitharu.kotatsu.R
 import org.koitharu.kotatsu.backups.domain.BackupUtils
 import org.koitharu.kotatsu.backups.ui.backup.BackupService
+import org.koitharu.kotatsu.backups.ui.restore.TachiyomiImportService
 import org.koitharu.kotatsu.core.exceptions.resolve.SnackbarErrorObserver
 import org.koitharu.kotatsu.core.nav.router
 import org.koitharu.kotatsu.core.prefs.AppSettings
@@ -36,6 +37,18 @@ class BackupsSettingsFragment : BasePreferenceFragment(R.string.backup_restore),
     ) { uri ->
         if (uri != null) {
             if (!BackupService.start(requireContext(), uri)) {
+                Snackbar.make(
+                    listView, R.string.operation_not_supported, Snackbar.LENGTH_SHORT,
+                ).show()
+            }
+        }
+    }
+
+    private val tachiyomiSelectCall = registerForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri != null) {
+            if (!TachiyomiImportService.start(requireContext(), uri)) {
                 Snackbar.make(
                     listView, R.string.operation_not_supported, Snackbar.LENGTH_SHORT,
                 ).show()
@@ -73,6 +86,15 @@ class BackupsSettingsFragment : BasePreferenceFragment(R.string.backup_restore),
                 true
             }
 
+            KEY_IMPORT_TACHIYOMI -> {
+                if (!tachiyomiSelectCall.tryLaunch(arrayOf("*/*"))) {
+                    Snackbar.make(
+                        listView, R.string.operation_not_supported, Snackbar.LENGTH_SHORT,
+                    ).show()
+                }
+                true
+            }
+
             else -> super.onPreferenceTreeClick(preference)
         }
     }
@@ -81,6 +103,11 @@ class BackupsSettingsFragment : BasePreferenceFragment(R.string.backup_restore),
         if (result != null) {
             router.showBackupRestoreDialog(result)
         }
+    }
+
+    private companion object {
+
+        const val KEY_IMPORT_TACHIYOMI = "import_tachiyomi"
     }
 
     private fun bindPeriodicalBackupSummary() {
