@@ -287,6 +287,12 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 	val isTrackerNotificationsEnabled: Boolean
 		get() = prefs.getBoolean(KEY_TRACKER_NOTIFICATIONS, true)
 
+	// Global switch for the "CAPTCHA required" notification. Off by default: the prompt still appears
+	// interactively when you open/read a source that needs it, but the background tracker and passive
+	// cover-image loads no longer raise notifications.
+	val isCaptchaNotificationsEnabled: Boolean
+		get() = prefs.getBoolean(KEY_CAPTCHA_NOTIFICATIONS, false)
+
 	val isTrackerNsfwDisabled: Boolean
 		get() = prefs.getBoolean(KEY_TRACKER_NO_NSFW, false)
 
@@ -876,6 +882,7 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 		const val KEY_TRACK_CATEGORIES = "track_categories"
 		const val KEY_TRACK_WARNING = "track_warning"
 		const val KEY_TRACKER_NOTIFICATIONS = "tracker_notifications"
+		const val KEY_CAPTCHA_NOTIFICATIONS = "captcha_notifications"
 		const val KEY_TRACKER_NO_NSFW = "tracker_no_nsfw"
 		const val KEY_TRACKER_DOWNLOAD = "tracker_download"
 		const val KEY_TRACKER_UNSTUCK_MIGRATION_V4 = "tracker_unstuck_migration_v4"

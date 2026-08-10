@@ -5,6 +5,18 @@ fork of [Kotatsu-Redo](https://github.com/Kotatsu-Redo/Kotatsu-Redo). Releases u
 `major.minor.patch` numbers continuing the upstream line the fork forked from, so the in-app
 GitHub-releases updater treats each one as a normal upgrade.
 
+## [9.8.3-beta6] - 2026-08-09
+
+Development (pre-release) build for the in-app **Development** update channel.
+
+### Added
+
+- **"Show CAPTCHA notifications" toggle** (Settings → Notifications), **off by default**. It gates the
+  single notification choke point, so the "CAPTCHA required" notification no longer fires from the
+  background new-chapter tracker or from passive cover-image loads that hit Cloudflare. The CAPTCHA
+  prompt still appears interactively when you open or read a source that needs one, and per-source
+  CAPTCHA-solving is unaffected.
+
 ## [9.8.3-beta5] - 2026-08-09
 
 Development (pre-release) build for the in-app **Development** update channel.

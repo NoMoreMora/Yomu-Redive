@@ -59,6 +59,13 @@
 		android:summary="@string/disable_nsfw_notifications_summary"
 		android:title="@string/disable_nsfw_notifications" />
 
+	<SwitchPreferenceCompat
+		android:defaultValue="false"
+		android:icon="@drawable/ic_bot"
+		android:key="captcha_notifications"
+		android:summary="@string/captcha_notifications_summary"
+		android:title="@string/captcha_notifications" />
+
 	<ListPreference
 		android:dependency="tracker_enabled"
 		android:entries="@array/tracker_download_strategies"

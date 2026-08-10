@@ -45,6 +45,7 @@ import org.koitharu.kotatsu.core.model.getTitle
 import org.koitharu.kotatsu.core.model.isNsfw
 import org.koitharu.kotatsu.core.nav.AppRouter
 import org.koitharu.kotatsu.core.parser.favicon.faviconUri
+import org.koitharu.kotatsu.core.prefs.AppSettings
 import org.koitharu.kotatsu.core.prefs.SourceSettings
 import org.koitharu.kotatsu.core.util.ext.checkNotificationPermission
 import org.koitharu.kotatsu.core.util.ext.getNotificationIconSize
@@ -67,6 +68,7 @@ class CaptchaHandler @Inject constructor(
 	private val databaseProvider: Provider<MangaDatabase>,
 	private val coilProvider: Provider<ImageLoader>,
 	private val captchaAutoResolveCoordinator: CaptchaAutoResolveCoordinator,
+	private val settings: AppSettings,
 ) : EventListener() {
 
 	private val exceptionMap = MutableScatterMap<MangaSource, CloudFlareProtectedException>()
@@ -127,7 +129,7 @@ class CaptchaHandler @Inject constructor(
 			val dao = databaseProvider.get().getSourcesDao()
 			dao.setCfState(source.name, exception?.state ?: CloudFlareHelper.PROTECTION_NOT_DETECTED)
 
-			if (notify && context.checkNotificationPermission(CHANNEL_ID)) {
+			if (notify && settings.isCaptchaNotificationsEnabled && context.checkNotificationPermission(CHANNEL_ID)) {
 				val exceptions = dao.findAllCaptchaRequired().mapNotNull {
 					it.source.toMangaSourceOrNull()
 				}.filterNot {
