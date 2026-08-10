@@ -5,6 +5,17 @@ fork of [Kotatsu-Redo](https://github.com/Kotatsu-Redo/Kotatsu-Redo). Releases u
 `major.minor.patch` numbers continuing the upstream line the fork forked from, so the in-app
 GitHub-releases updater treats each one as a normal upgrade.
 
+## [9.8.3] - 2026-08-10
+
+Stable release consolidating the 9.8.3 development builds.
+
+- TachiyomiSY-style Migration rework (big cover cards, per-row menu, source dropdown, options sheet).
+- Developer options + experimental Auto-translate descriptions and Webtoon resume fix.
+- Hide partial chapters toggle; sort Favourites by unread chapters; MangaK.io NSFW toggle.
+- "Show CAPTCHA notifications" toggle (off by default).
+- Fixed continuous-reader zoom retention and MangaK.io chapter numbering.
+- Consolidated 13 sources into MangaK.io; new mascot icon.
+
 ## [9.8.3-beta6] - 2026-08-09
 
 Development (pre-release) build for the in-app **Development** update channel.
