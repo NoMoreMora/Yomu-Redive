@@ -30,11 +30,6 @@ Kotatsu (see [below](#inherited-from-kotatsu)).
   descriptions**, a **webtoon resume fix**, exportable debug logs, all opt-in.
 - **Reading quality-of-life** — **hide partial chapters** (`.5`-style), sort Favourites by unread
   count, and more.
-- **Source curation** — 13 MangaReader clones consolidated into **MangaK.io** (with an NSFW toggle);
-  sources build from the [yomu-redive-parsers](https://github.com/NoMoreMora/yomu-redive-parsers)
-  fork so they can be tweaked while still tracking upstream.
-- **Fewer nags** — a global **"Show CAPTCHA notifications"** toggle (off by default).
-- **In-app updates** — direct from GitHub Releases, with **Stable** and **Development** channels.
 
 ## Roadmap
 
@@ -62,26 +57,7 @@ flowchart LR
 **Legend:** 🟢 released · 🔵 in progress · ⚫ planned · ⚪ future. Roadmap items are goals, not
 promises, and may shift.
 
-## Download
-
-Grab the latest APK from the [**Releases**](https://github.com/NoMoreMora/Yomu-Redive/releases)
-page, or let the app update itself:
-
-- **Stable** channel — plain-numbered releases (e.g. `9.8.3`).
-- **Development** channel — also receives `-beta` pre-releases. Switch in **Settings → About →
-  Update channel**.
-
-Yomu Re:Dive installs under its own application id (`io.github.yomuredive.yomu`), so it sits
-**side-by-side** with upstream Kotatsu / Kotatsu-Redo without conflicts.
-
 ## Inherited from Kotatsu
-
-Yomu Re:Dive is a full Kotatsu reader, so it also includes everything upstream provides — 1200+
-online sources with search and filters, favourites organised by category, reading history,
-bookmarks and incognito mode, offline downloads (plus third-party CBZ), a Material You UI, a
-customizable standard/webtoon reader, new-chapter notifications and recommendations, tracker
-integration (Shikimori, AniList, MyAnimeList, Kitsu), app-lock, cross-device sync, and support for
-Android 6.0+.
 
 For the complete feature set and general documentation, see the upstream projects:
 [**Kotatsu-Redo**](https://github.com/Kotatsu-Redo/Kotatsu-Redo) and
@@ -96,14 +72,6 @@ For the complete feature set and general documentation, see the upstream project
 The debug build installs under `io.github.yomuredive.yomu.debug` (installable alongside the
 release). See [FORK.md](FORK.md) for build-environment notes, the release-signing setup, and the
 custom-sources (parser fork) workflow.
-
-## Fork changes & attribution
-
-- [**FORK.md**](FORK.md) — full lineage, attribution, and per-change implementation notes.
-- [**CHANGELOG.md**](CHANGELOG.md) — what shipped in each version.
-
-The internal source namespace (`org.koitharu.kotatsu`) is intentionally unchanged to keep upstream
-merges clean.
 
 ## Contributing
 
