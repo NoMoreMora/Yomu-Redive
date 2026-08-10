@@ -1,15 +1,25 @@
 package org.koitharu.kotatsu.alternatives.ui
 
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.plus
 import org.koitharu.kotatsu.alternatives.domain.MigrateUseCase
+import org.koitharu.kotatsu.alternatives.domain.MigrationOptions
+import org.koitharu.kotatsu.core.model.chaptersCount
 import org.koitharu.kotatsu.core.parser.MangaDataRepository
 import org.koitharu.kotatsu.core.parser.MangaRepository
+import org.koitharu.kotatsu.core.prefs.AppSettings
 import org.koitharu.kotatsu.core.ui.BaseViewModel
 import org.koitharu.kotatsu.core.util.ext.MutableEventFlow
 import org.koitharu.kotatsu.core.util.ext.call
@@ -25,12 +35,14 @@ import javax.inject.Inject
 sealed interface MatchState {
 	data object Searching : MatchState
 	data object NotFound : MatchState
-	data class Matched(val manga: Manga) : MatchState
+	data class Matched(val manga: Manga, val chaptersCount: Int) : MatchState
 }
 
 data class MigrationRow(
 	val original: Manga,
+	val originalChaptersCount: Int,
 	val match: MatchState,
+	val skipped: Boolean = false,
 )
 
 @HiltViewModel
@@ -40,77 +52,133 @@ class MigrationListViewModel @Inject constructor(
 	private val searchHelperFactory: SearchV2Helper.Factory,
 	private val mangaRepositoryFactory: MangaRepository.Factory,
 	private val migrateUseCase: MigrateUseCase,
-	sourcesRepository: MangaSourcesRepository,
+	private val sourcesRepository: MangaSourcesRepository,
+	private val settings: AppSettings,
 ) : BaseViewModel() {
 
 	private val ids: LongArray = savedStateHandle.get<LongArray>(MigrationListActivity.EXTRA_IDS) ?: LongArray(0)
-	private val targetSource: MangaSource? = savedStateHandle.get<String>(MigrationListActivity.EXTRA_SOURCE)?.let { name ->
-		sourcesRepository.allMangaSources.firstOrNull { it.name == name }
-	}
+	private val initialSourceName: String? = savedStateHandle.get<String>(MigrationListActivity.EXTRA_SOURCE)
+
+	private var originals: List<Manga> = emptyList()
 
 	private val rows = MutableStateFlow<List<MigrationRow>>(emptyList())
-	val content: StateFlow<List<MigrationRow>> = rows
+	private val options = MutableStateFlow(settings.migrationOptions)
+
+	val targetSource = MutableStateFlow<MangaSource?>(null)
+	val availableSources = MutableStateFlow<List<MangaSource>>(emptyList())
+
+	val content: StateFlow<List<MigrationRow>> = combine(rows, options) { list, opts ->
+		list.filter { row ->
+			val m = row.match
+			when {
+				opts.hideWithoutMatch && m is MatchState.NotFound -> false
+				opts.hideWithoutNewerChapters && m is MatchState.Matched &&
+					m.chaptersCount <= row.originalChaptersCount -> false
+
+				else -> true
+			}
+		}
+	}.stateIn(viewModelScope + Dispatchers.Default, SharingStarted.Eagerly, emptyList())
 
 	val onFinished = MutableEventFlow<Int>()
+	val onRowMigrated = MutableEventFlow<Unit>()
 
 	val matchedCount: Int
-		get() = rows.value.count { it.match is MatchState.Matched }
+		get() = rows.value.count { !it.skipped && it.match is MatchState.Matched }
+
+	private var matchJob: Job? = null
+	private var lastSearchKey: SearchKey? = null
 
 	init {
-		loadAndMatch()
+		observeOptions()
+		load()
 	}
 
-	private fun loadAndMatch() {
-		launchLoadingJob(Dispatchers.Default) {
-			val originals = ArrayList<Manga>(ids.size)
-			for (id in ids) {
-				mangaDataRepository.findMangaById(id, withChapters = false)?.let(originals::add)
-			}
-			rows.value = originals.map { MigrationRow(it, MatchState.Searching) }
-			val source = targetSource
-			if (source == null) {
-				rows.value = rows.value.map { it.copy(match = MatchState.NotFound) }
-				return@launchLoadingJob
-			}
-			coroutineScope {
-				originals.forEach { original ->
-					launch {
-						val match = findMatch(original, source)
-						updateRow(original.id, if (match != null) MatchState.Matched(match) else MatchState.NotFound)
-					}
-				}
+	private fun observeOptions() {
+		launchJob(Dispatchers.Default) {
+			settings.observe(
+				AppSettings.KEY_MIGRATION_CHAPTERS,
+				AppSettings.KEY_MIGRATION_CATEGORIES,
+				AppSettings.KEY_MIGRATION_COVER,
+				AppSettings.KEY_MIGRATION_DELETE_DOWNLOADS,
+				AppSettings.KEY_MIGRATION_EXTRA_KEYWORDS,
+				AppSettings.KEY_MIGRATION_HIDE_UNMATCHED,
+				AppSettings.KEY_MIGRATION_HIDE_NO_NEWER,
+				AppSettings.KEY_MIGRATION_ADVANCED,
+				AppSettings.KEY_MIGRATION_BY_CHAPTERS,
+			).collect {
+				options.value = settings.migrationOptions
+				rematchIfNeeded()
 			}
 		}
 	}
 
-	private suspend fun findMatch(original: Manga, source: MangaSource): Manga? {
-		val hit = runCatchingCancellable {
-			searchHelperFactory.create(source)
-				.invoke(original.title, SearchKind.TITLE)
-				?.manga
-				?.firstOrNull { it.id != original.id }
-		}.getOrNull() ?: return null
-		return runCatchingCancellable {
-			mangaRepositoryFactory.create(hit.source).getDetails(hit)
-		}.getOrDefault(hit)
+	private fun load() {
+		launchLoadingJob(Dispatchers.Default) {
+			val list = ArrayList<Manga>(ids.size)
+			for (id in ids) {
+				mangaDataRepository.findMangaById(id, withChapters = true)?.let(list::add)
+			}
+			originals = list
+			rows.value = list.map { MigrationRow(it, it.chaptersCount(), MatchState.Searching) }
+			availableSources.value = sourcesRepository.getEnabledSources()
+			targetSource.value = resolveDefaultSource(list)
+			rematchIfNeeded()
+		}
 	}
 
-	@Synchronized
-	private fun updateRow(originalId: Long, state: MatchState) {
-		rows.value = rows.value.map { if (it.original.id == originalId) it.copy(match = state) else it }
+	fun setTargetSource(source: MangaSource?) {
+		if (targetSource.value == source || source == null) {
+			return
+		}
+		targetSource.value = source
+		rematchIfNeeded()
+	}
+
+	fun setTargetSourceByName(name: String?) {
+		val source = name?.let { n -> sourcesRepository.allMangaSources.firstOrNull { it.name == n } } ?: return
+		// A source picked via "More sources…" may be disabled; make sure it is selectable in the dropdown.
+		if (availableSources.value.none { it == source }) {
+			availableSources.value = availableSources.value + source
+		}
+		setTargetSource(source)
 	}
 
 	fun setMatch(originalId: Long, match: Manga) {
-		updateRow(originalId, MatchState.Matched(match))
+		updateRow(originalId, MatchState.Matched(match, match.chaptersCount()))
+	}
+
+	fun setSkipped(originalId: Long, skipped: Boolean) {
+		rows.value = rows.value.map { if (it.original.id == originalId) it.copy(skipped = skipped) else it }
+	}
+
+	fun migrateRowNow(originalId: Long, copy: Boolean) {
+		val row = rows.value.firstOrNull { it.original.id == originalId } ?: return
+		val target = (row.match as? MatchState.Matched)?.manga ?: return
+		launchLoadingJob(Dispatchers.Default) {
+			runCatchingCancellable {
+				migrateUseCase(row.original, target, copy = copy, options = options.value)
+			}.onSuccess {
+				rows.value = rows.value.filterNot { it.original.id == originalId }
+				originals = originals.filterNot { it.id == originalId }
+				onRowMigrated.call(Unit)
+			}.onFailure {
+				it.printStackTraceDebug()
+			}
+		}
 	}
 
 	fun apply(copy: Boolean) {
 		launchLoadingJob(Dispatchers.Default) {
+			val opts = options.value
 			var migrated = 0
 			for (row in rows.value) {
+				if (row.skipped) {
+					continue
+				}
 				val target = (row.match as? MatchState.Matched)?.manga ?: continue
 				runCatchingCancellable {
-					migrateUseCase(row.original, target, copy = copy)
+					migrateUseCase(row.original, target, copy = copy, options = opts)
 				}.onSuccess {
 					migrated++
 				}.onFailure {
@@ -119,5 +187,115 @@ class MigrationListViewModel @Inject constructor(
 			}
 			onFinished.call(migrated)
 		}
+	}
+
+	private fun rematchIfNeeded() {
+		val opts = options.value
+		val key = SearchKey(
+			source = targetSource.value,
+			advanced = opts.advancedSearch,
+			byChapters = opts.matchByChapterCount,
+			keywords = opts.extraKeywords.trim(),
+		)
+		if (key == lastSearchKey) {
+			return
+		}
+		lastSearchKey = key
+		startMatching(key)
+	}
+
+	private fun startMatching(key: SearchKey) {
+		val prevJob = matchJob
+		matchJob = launchLoadingJob(Dispatchers.Default) {
+			prevJob?.cancelAndJoin()
+			// reset to Searching, keeping any per-row skip flags
+			val skipped = rows.value.associate { it.original.id to it.skipped }
+			rows.value = originals.map {
+				MigrationRow(it, it.chaptersCount(), MatchState.Searching, skipped[it.id] == true)
+			}
+			val source = key.source
+			if (source == null) {
+				rows.value = rows.value.map { it.copy(match = MatchState.NotFound) }
+				return@launchLoadingJob
+			}
+			coroutineScope {
+				originals.forEach { original ->
+					launch {
+						val match = findMatch(original, source, key)
+						updateRow(
+							original.id,
+							if (match != null) MatchState.Matched(match.first, match.second) else MatchState.NotFound,
+						)
+					}
+				}
+			}
+		}
+	}
+
+	private suspend fun findMatch(original: Manga, source: MangaSource, key: SearchKey): Pair<Manga, Int>? {
+		val baseQuery = if (key.advanced) keywords(original.title) else original.title
+		val query = if (key.keywords.isNotEmpty()) "$baseQuery ${key.keywords}" else baseQuery
+		val kind = if (key.advanced) SearchKind.SIMPLE else SearchKind.TITLE
+		val hits = runCatchingCancellable {
+			searchHelperFactory.create(source).invoke(query, kind)?.manga?.filter { it.id != original.id }
+		}.getOrNull().orEmpty()
+		if (hits.isEmpty()) {
+			return null
+		}
+		return if (key.byChapters) {
+			hits.take(MATCH_BY_CHAPTER_LIMIT)
+				.map { withDetails(it) }
+				.maxByOrNull { it.chaptersCount() }
+				?.let { it to it.chaptersCount() }
+		} else {
+			val details = withDetails(hits.first())
+			details to details.chaptersCount()
+		}
+	}
+
+	private suspend fun withDetails(manga: Manga): Manga = runCatchingCancellable {
+		mangaRepositoryFactory.create(manga.source).getDetails(manga)
+	}.getOrDefault(manga)
+
+	@Synchronized
+	private fun updateRow(originalId: Long, state: MatchState) {
+		rows.value = rows.value.map { if (it.original.id == originalId) it.copy(match = state) else it }
+	}
+
+	private suspend fun resolveDefaultSource(originals: List<Manga>): MangaSource? {
+		val allSources = sourcesRepository.allMangaSources
+		initialSourceName?.let { name -> allSources.firstOrNull { it.name == name } }?.let { return it }
+		// Compare by name — MangaSource instances loaded from the DB don't always object-equal the
+		// enum instances returned by the sources repository, so a set/`in` check can miss the origin.
+		val originalSourceNames = originals.mapTo(HashSet()) { it.source.name }
+		val preferred = settings.migrationPreferredSource?.let { name -> allSources.firstOrNull { it.name == name } }
+		if (preferred != null && preferred.name !in originalSourceNames) {
+			return preferred
+		}
+		// Migrating away from the preferred source (or none set): fall back to the most-used enabled
+		// source that isn't one of the sources we're migrating from.
+		sourcesRepository.getTopSources(TOP_SOURCES_LIMIT).firstOrNull { it.name !in originalSourceNames }?.let { return it }
+		val enabled = sourcesRepository.getEnabledSources()
+		// Prefer a source we're not migrating from; if there is none (e.g. only the origin is
+		// enabled), fall back to the preferred/first enabled so the dropdown still has a selection.
+		return enabled.firstOrNull { it.name !in originalSourceNames } ?: preferred ?: enabled.firstOrNull()
+	}
+
+	private fun keywords(title: String): String = title.split(WORD_SEPARATORS)
+		.filter { it.length > 2 }
+		.joinToString(" ")
+		.ifEmpty { title }
+
+	private data class SearchKey(
+		val source: MangaSource?,
+		val advanced: Boolean,
+		val byChapters: Boolean,
+		val keywords: String,
+	)
+
+	private companion object {
+		private const val MATCH_BY_CHAPTER_LIMIT = 5
+		private const val TOP_SOURCES_LIMIT = 10
+		private val WORD_SEPARATORS = Regex("[^\\p{L}\\p{N}]+")
 	}
 }

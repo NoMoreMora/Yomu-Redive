@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.onStart
 import org.koitharu.kotatsu.R
+import org.koitharu.kotatsu.alternatives.domain.MigrationOptions
 import org.koitharu.kotatsu.core.model.ZoomMode
 import org.koitharu.kotatsu.core.network.DoHProvider
 import org.koitharu.kotatsu.core.util.ext.connectivityManager
@@ -112,6 +113,55 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 	var migrationPreferredSource: String?
 		get() = prefs.getString(KEY_MIGRATION_PREFERRED_SOURCE, null)
 		set(value) = prefs.edit { putString(KEY_MIGRATION_PREFERRED_SOURCE, value) }
+
+	var isMigrateChapters: Boolean
+		get() = prefs.getBoolean(KEY_MIGRATION_CHAPTERS, true)
+		set(value) = prefs.edit { putBoolean(KEY_MIGRATION_CHAPTERS, value) }
+
+	var isMigrateCategories: Boolean
+		get() = prefs.getBoolean(KEY_MIGRATION_CATEGORIES, true)
+		set(value) = prefs.edit { putBoolean(KEY_MIGRATION_CATEGORIES, value) }
+
+	var isMigrateCover: Boolean
+		get() = prefs.getBoolean(KEY_MIGRATION_COVER, true)
+		set(value) = prefs.edit { putBoolean(KEY_MIGRATION_COVER, value) }
+
+	var isMigrationDeleteDownloads: Boolean
+		get() = prefs.getBoolean(KEY_MIGRATION_DELETE_DOWNLOADS, false)
+		set(value) = prefs.edit { putBoolean(KEY_MIGRATION_DELETE_DOWNLOADS, value) }
+
+	var migrationExtraKeywords: String
+		get() = prefs.getString(KEY_MIGRATION_EXTRA_KEYWORDS, null).orEmpty()
+		set(value) = prefs.edit { putString(KEY_MIGRATION_EXTRA_KEYWORDS, value) }
+
+	var isMigrationHideUnmatched: Boolean
+		get() = prefs.getBoolean(KEY_MIGRATION_HIDE_UNMATCHED, false)
+		set(value) = prefs.edit { putBoolean(KEY_MIGRATION_HIDE_UNMATCHED, value) }
+
+	var isMigrationHideNoNewer: Boolean
+		get() = prefs.getBoolean(KEY_MIGRATION_HIDE_NO_NEWER, false)
+		set(value) = prefs.edit { putBoolean(KEY_MIGRATION_HIDE_NO_NEWER, value) }
+
+	var isMigrationAdvancedSearch: Boolean
+		get() = prefs.getBoolean(KEY_MIGRATION_ADVANCED, false)
+		set(value) = prefs.edit { putBoolean(KEY_MIGRATION_ADVANCED, value) }
+
+	var isMigrationMatchByChapters: Boolean
+		get() = prefs.getBoolean(KEY_MIGRATION_BY_CHAPTERS, false)
+		set(value) = prefs.edit { putBoolean(KEY_MIGRATION_BY_CHAPTERS, value) }
+
+	val migrationOptions: MigrationOptions
+		get() = MigrationOptions(
+			migrateChapters = isMigrateChapters,
+			migrateCategories = isMigrateCategories,
+			migrateCover = isMigrateCover,
+			deleteDownloads = isMigrationDeleteDownloads,
+			extraKeywords = migrationExtraKeywords,
+			hideWithoutMatch = isMigrationHideUnmatched,
+			hideWithoutNewerChapters = isMigrationHideNoNewer,
+			advancedSearch = isMigrationAdvancedSearch,
+			matchByChapterCount = isMigrationMatchByChapters,
+		)
 
 	val isCoverArtCacheEnabled: Boolean
 		get() = prefs.getBoolean(KEY_COVER_ART_CACHE, false)
@@ -948,6 +998,15 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 		const val KEY_SOURCES_ENABLED_ALL = "sources_enabled_all"
 		const val KEY_QUICK_FILTER = "quick_filter"
 		const val KEY_MIGRATION_PREFERRED_SOURCE = "migration_preferred_source"
+		const val KEY_MIGRATION_CHAPTERS = "migration_chapters"
+		const val KEY_MIGRATION_CATEGORIES = "migration_categories"
+		const val KEY_MIGRATION_COVER = "migration_cover"
+		const val KEY_MIGRATION_DELETE_DOWNLOADS = "migration_delete_downloads"
+		const val KEY_MIGRATION_EXTRA_KEYWORDS = "migration_extra_keywords"
+		const val KEY_MIGRATION_HIDE_UNMATCHED = "migration_hide_unmatched"
+		const val KEY_MIGRATION_HIDE_NO_NEWER = "migration_hide_no_newer"
+		const val KEY_MIGRATION_ADVANCED = "migration_advanced_search"
+		const val KEY_MIGRATION_BY_CHAPTERS = "migration_match_by_chapters"
 		const val KEY_COVER_ART_CACHE = "cover_art_cache"
 		const val KEY_FAVOURITES_CACHE = "favourites_cache"
 		const val KEY_EXPERIMENTAL_FEATURES = "experimental_features"

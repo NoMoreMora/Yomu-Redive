@@ -5,6 +5,27 @@ fork of [Kotatsu-Redo](https://github.com/Kotatsu-Redo/Kotatsu-Redo). Releases u
 `major.minor.patch` numbers continuing the upstream line the fork forked from, so the in-app
 GitHub-releases updater treats each one as a normal upgrade.
 
+## [9.8.3-beta5] - 2026-08-09
+
+Development (pre-release) build for the in-app **Development** update channel.
+
+### Changed — Migration reworked (TachiyomiSY-style)
+
+- **Big cover cards.** The migration review list now shows each manga as a large cover-forward card
+  (cover, title, source, "Latest: N") on both sides with a chevron between — much easier to
+  recognize by art. No more "no match" status text; an unmatched candidate is just an empty
+  placeholder.
+- **Per-row ⋮ menu**: **Search manually** (cross-source search), **Don't migrate** (skip/dim the
+  row), **Migrate now**, **Copy now** (act on that one row).
+- **Direct entry + source dropdown.** Picking Migration on multiple favourites goes straight to the
+  review list; a **top-bar dropdown** chooses the target source (with **More sources…** to reach
+  disabled ones). It defaults to your preferred source, or the most-used source when migrating away
+  from it.
+- **Tap the candidate card** to open its details page (back returns to the list).
+- **Migration options** (new ⚙ sheet): choose data to migrate (chapters, categories, custom cover),
+  delete the original's downloads after migration, add extra search keywords, hide entries without a
+  match / without newer chapters, advanced (keyword) search, and match by chapter number.
+
 ## [9.8.3-beta4] - 2026-08-09
 
 Development (pre-release) build for the in-app **Development** update channel.

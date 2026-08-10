@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content"
+	android:orientation="vertical">
+
+	<org.koitharu.kotatsu.core.ui.sheet.AdaptiveSheetHeaderBar
+		android:id="@+id/headerBar"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		app:title="@string/migration_options" />
+
+	<androidx.core.widget.NestedScrollView
+		android:id="@+id/scrollView"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:clipToPadding="false"
+		android:scrollIndicators="top"
+		android:scrollbars="vertical">
+
+		<LinearLayout
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:orientation="vertical"
+			android:paddingBottom="@dimen/margin_normal">
+
+			<TextView
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginHorizontal="@dimen/margin_normal"
+				android:text="@string/migration_data_to_migrate"
+				android:textAppearance="?textAppearanceTitleSmall" />
+
+			<com.google.android.material.materialswitch.MaterialSwitch
+				android:id="@+id/switch_chapters"
+				style="@style/Widget.Kotatsu.Sheet.Switch"
+				android:text="@string/migration_chapters" />
+
+			<com.google.android.material.materialswitch.MaterialSwitch
+				android:id="@+id/switch_categories"
+				style="@style/Widget.Kotatsu.Sheet.Switch"
+				android:text="@string/migration_categories" />
+
+			<com.google.android.material.materialswitch.MaterialSwitch
+				android:id="@+id/switch_cover"
+				style="@style/Widget.Kotatsu.Sheet.Switch"
+				android:text="@string/migration_custom_cover" />
+
+			<com.google.android.material.materialswitch.MaterialSwitch
+				android:id="@+id/switch_delete_downloads"
+				style="@style/Widget.Kotatsu.Sheet.Switch"
+				android:text="@string/migration_delete_downloads" />
+
+			<com.google.android.material.textfield.TextInputLayout
+				android:id="@+id/layout_keywords"
+				style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginHorizontal="@dimen/margin_normal"
+				android:layout_marginTop="@dimen/margin_normal"
+				android:hint="@string/migration_additional_keywords">
+
+				<com.google.android.material.textfield.TextInputEditText
+					android:id="@+id/edit_keywords"
+					android:layout_width="match_parent"
+					android:layout_height="wrap_content"
+					android:imeOptions="actionDone"
+					android:inputType="text"
+					android:maxLines="1" />
+
+			</com.google.android.material.textfield.TextInputLayout>
+
+			<com.google.android.material.materialswitch.MaterialSwitch
+				android:id="@+id/switch_hide_unmatched"
+				style="@style/Widget.Kotatsu.Sheet.Switch"
+				android:layout_marginTop="@dimen/margin_small"
+				android:text="@string/migration_hide_unmatched" />
+
+			<com.google.android.material.materialswitch.MaterialSwitch
+				android:id="@+id/switch_hide_no_newer"
+				style="@style/Widget.Kotatsu.Sheet.Switch"
+				android:text="@string/migration_hide_no_newer" />
+
+			<com.google.android.material.materialswitch.MaterialSwitch
+				android:id="@+id/switch_advanced"
+				style="@style/Widget.Kotatsu.Sheet.Switch"
+				android:text="@string/migration_advanced_search" />
+
+			<com.google.android.material.materialswitch.MaterialSwitch
+				android:id="@+id/switch_by_chapters"
+				style="@style/Widget.Kotatsu.Sheet.Switch"
+				android:text="@string/migration_match_by_chapters" />
+
+		</LinearLayout>
+	</androidx.core.widget.NestedScrollView>
+</LinearLayout>

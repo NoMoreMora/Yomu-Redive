@@ -672,4 +672,15 @@
 		<item name="drawableSize">@dimen/m3_chip_icon_size</item>
 	</style>
 
+	<style name="Widget.Kotatsu.Sheet.Switch" parent="Widget.Material3.CompoundButton.MaterialSwitch">
+		<item name="android:layout_width">match_parent</item>
+		<item name="android:layout_height">?android:listPreferredItemHeightSmall</item>
+		<item name="android:paddingStart">?android:listPreferredItemPaddingStart</item>
+		<item name="android:paddingEnd">?android:listPreferredItemPaddingEnd</item>
+		<item name="android:singleLine">true</item>
+		<item name="android:ellipsize">end</item>
+		<item name="android:textAppearance">?attr/textAppearanceListItem</item>
+		<item name="android:textColor">?colorOnSurfaceVariant</item>
+	</style>
+
 </resources>

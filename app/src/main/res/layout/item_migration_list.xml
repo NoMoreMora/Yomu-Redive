@@ -1,107 +1,171 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
 	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
 	xmlns:tools="http://schemas.android.com/tools"
 	android:layout_width="match_parent"
 	android:layout_height="wrap_content"
+	android:baselineAligned="false"
 	android:gravity="center_vertical"
-	android:minHeight="80dp"
 	android:orientation="horizontal"
 	android:paddingStart="@dimen/screen_padding"
-	android:paddingEnd="@dimen/screen_padding"
-	android:paddingTop="@dimen/margin_small"
-	android:paddingBottom="@dimen/margin_small">
+	android:paddingEnd="@dimen/margin_small"
+	android:paddingTop="@dimen/margin_normal"
+	android:paddingBottom="@dimen/margin_normal">
 
-	<org.koitharu.kotatsu.image.ui.CoverImageView
-		android:id="@+id/imageView_cover_from"
-		android:layout_width="64dp"
-		android:layout_height="90dp"
-		android:scaleType="centerCrop" />
-
-	<LinearLayout
+	<androidx.constraintlayout.widget.ConstraintLayout
+		android:id="@+id/card_from"
 		android:layout_width="0dp"
 		android:layout_height="wrap_content"
-		android:layout_marginStart="@dimen/margin_small"
-		android:layout_weight="1"
-		android:orientation="vertical">
+		android:layout_gravity="top"
+		android:layout_weight="1">
+
+		<org.koitharu.kotatsu.image.ui.CoverImageView
+			android:id="@+id/imageView_cover_from"
+			android:layout_width="0dp"
+			android:layout_height="0dp"
+			android:background="?colorSurfaceContainer"
+			android:scaleType="centerCrop"
+			app:layout_constraintDimensionRatio="13:18"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintTop_toTopOf="parent"
+			app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Kotatsu.Cover"
+			tools:src="@tools:sample/backgrounds/scenic" />
 
 		<TextView
 			android:id="@+id/textView_title_from"
-			android:layout_width="match_parent"
+			android:layout_width="0dp"
 			android:layout_height="wrap_content"
+			android:layout_marginTop="@dimen/margin_small"
 			android:ellipsize="end"
 			android:maxLines="2"
-			android:textAppearance="?attr/textAppearanceBodyMedium"
+			android:textAppearance="?attr/textAppearanceTitleSmall"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintTop_toBottomOf="@id/imageView_cover_from"
 			tools:text="Original manga title" />
 
 		<TextView
 			android:id="@+id/textView_source_from"
-			android:layout_width="match_parent"
+			android:layout_width="0dp"
 			android:layout_height="wrap_content"
 			android:ellipsize="end"
 			android:maxLines="1"
 			android:textAppearance="?attr/textAppearanceBodySmall"
 			android:textColor="?android:attr/textColorSecondary"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintTop_toBottomOf="@id/textView_title_from"
 			tools:text="Source A" />
 
-	</LinearLayout>
+		<TextView
+			android:id="@+id/textView_latest_from"
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:ellipsize="end"
+			android:maxLines="1"
+			android:textAppearance="?attr/textAppearanceBodySmall"
+			android:textColor="?android:attr/textColorSecondary"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintTop_toBottomOf="@id/textView_source_from"
+			tools:text="Latest: 71" />
 
-	<TextView
+	</androidx.constraintlayout.widget.ConstraintLayout>
+
+	<ImageView
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
-		android:layout_marginStart="@dimen/margin_small"
-		android:layout_marginEnd="@dimen/margin_small"
-		android:text="→"
-		android:textAppearance="?attr/textAppearanceTitleLarge"
-		android:textColor="?android:attr/textColorSecondary" />
+		android:layout_gravity="center_vertical"
+		android:layout_marginHorizontal="@dimen/margin_small"
+		android:contentDescription="@null"
+		android:src="@drawable/ic_arrow_forward"
+		app:tint="?android:attr/textColorSecondary" />
 
-	<LinearLayout
-		android:id="@+id/layout_to"
+	<androidx.constraintlayout.widget.ConstraintLayout
+		android:id="@+id/card_to"
 		android:layout_width="0dp"
-		android:layout_height="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_gravity="top"
 		android:layout_weight="1"
 		android:background="?attr/selectableItemBackground"
 		android:clickable="true"
-		android:focusable="true"
-		android:gravity="center_vertical"
-		android:orientation="horizontal"
-		android:paddingTop="@dimen/margin_small"
-		android:paddingBottom="@dimen/margin_small">
+		android:focusable="true">
 
 		<org.koitharu.kotatsu.image.ui.CoverImageView
 			android:id="@+id/imageView_cover_to"
-			android:layout_width="64dp"
-			android:layout_height="90dp"
-			android:scaleType="centerCrop" />
+			android:layout_width="0dp"
+			android:layout_height="0dp"
+			android:background="?colorSurfaceContainer"
+			android:scaleType="centerCrop"
+			app:layout_constraintDimensionRatio="13:18"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintTop_toTopOf="parent"
+			app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Kotatsu.Cover"
+			tools:src="@tools:sample/backgrounds/scenic" />
 
-		<LinearLayout
+		<com.google.android.material.progressindicator.CircularProgressIndicator
+			android:id="@+id/progress_to"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:indeterminate="true"
+			android:visibility="gone"
+			app:layout_constraintBottom_toBottomOf="@id/imageView_cover_to"
+			app:layout_constraintEnd_toEndOf="@id/imageView_cover_to"
+			app:layout_constraintStart_toStartOf="@id/imageView_cover_to"
+			app:layout_constraintTop_toTopOf="@id/imageView_cover_to"
+			tools:visibility="visible" />
+
+		<TextView
+			android:id="@+id/textView_title_to"
 			android:layout_width="0dp"
 			android:layout_height="wrap_content"
-			android:layout_marginStart="@dimen/margin_small"
-			android:layout_weight="1"
-			android:orientation="vertical">
+			android:layout_marginTop="@dimen/margin_small"
+			android:ellipsize="end"
+			android:maxLines="2"
+			android:textAppearance="?attr/textAppearanceTitleSmall"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintTop_toBottomOf="@id/imageView_cover_to"
+			tools:text="Matched manga title" />
 
-			<TextView
-				android:id="@+id/textView_title_to"
-				android:layout_width="match_parent"
-				android:layout_height="wrap_content"
-				android:ellipsize="end"
-				android:maxLines="2"
-				android:textAppearance="?attr/textAppearanceBodyMedium"
-				tools:text="Matched manga title" />
+		<TextView
+			android:id="@+id/textView_source_to"
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:ellipsize="end"
+			android:maxLines="1"
+			android:textAppearance="?attr/textAppearanceBodySmall"
+			android:textColor="?android:attr/textColorSecondary"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintTop_toBottomOf="@id/textView_title_to"
+			tools:text="Source B" />
 
-			<TextView
-				android:id="@+id/textView_source_to"
-				android:layout_width="match_parent"
-				android:layout_height="wrap_content"
-				android:ellipsize="end"
-				android:maxLines="1"
-				android:textAppearance="?attr/textAppearanceBodySmall"
-				android:textColor="?android:attr/textColorSecondary"
-				tools:text="Source B" />
+		<TextView
+			android:id="@+id/textView_latest_to"
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:ellipsize="end"
+			android:maxLines="1"
+			android:textAppearance="?attr/textAppearanceBodySmall"
+			android:textColor="?android:attr/textColorSecondary"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintTop_toBottomOf="@id/textView_source_to"
+			tools:text="Latest: 214" />
 
-		</LinearLayout>
+	</androidx.constraintlayout.widget.ConstraintLayout>
 
-	</LinearLayout>
+	<ImageButton
+		android:id="@+id/button_menu"
+		android:layout_width="48dp"
+		android:layout_height="48dp"
+		android:layout_gravity="center_vertical"
+		android:background="?attr/selectableItemBackgroundBorderless"
+		android:contentDescription="@string/more"
+		android:src="@drawable/ic_more_vert" />
 
 </LinearLayout>

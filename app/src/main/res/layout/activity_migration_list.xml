@@ -18,6 +18,24 @@
 			android:layout_height="?attr/actionBarSize"
 			app:title="@string/manga_migration" />
 
+		<com.google.android.material.textfield.TextInputLayout
+			android:id="@+id/dropdown_source_layout"
+			style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:layout_marginHorizontal="@dimen/margin_normal"
+			android:layout_marginBottom="@dimen/margin_small"
+			android:hint="@string/migration_migrate_to">
+
+			<com.google.android.material.textfield.MaterialAutoCompleteTextView
+				android:id="@+id/dropdown_source"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:inputType="none"
+				tools:ignore="LabelFor" />
+
+		</com.google.android.material.textfield.TextInputLayout>
+
 	</com.google.android.material.appbar.AppBarLayout>
 
 	<androidx.recyclerview.widget.RecyclerView

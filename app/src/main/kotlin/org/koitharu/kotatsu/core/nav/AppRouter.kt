@@ -26,6 +26,7 @@ import org.koitharu.kotatsu.BuildConfig
 import org.koitharu.kotatsu.R
 import org.koitharu.kotatsu.alternatives.ui.AlternativesActivity
 import org.koitharu.kotatsu.alternatives.ui.MigrationListActivity
+import org.koitharu.kotatsu.alternatives.ui.MigrationOptionsSheet
 import org.koitharu.kotatsu.alternatives.ui.MigrationSourceActivity
 import org.koitharu.kotatsu.backups.ui.backup.BackupDialogFragment
 import org.koitharu.kotatsu.backups.ui.restore.RestoreDialogFragment
@@ -192,11 +193,15 @@ class AppRouter private constructor(
         startActivity(MigrationSourceActivity.newIntent(contextOrNull() ?: return, mangaIds.toLongArray()))
     }
 
-    fun openMigrationList(mangaIds: Collection<Long>, sourceName: String) {
+    fun openMigrationList(mangaIds: Collection<Long>, sourceName: String? = null) {
         if (mangaIds.isEmpty()) {
             return
         }
         startActivity(MigrationListActivity.newIntent(contextOrNull() ?: return, mangaIds.toLongArray(), sourceName))
+    }
+
+    fun showMigrationOptionsSheet() {
+        MigrationOptionsSheet().showDistinct()
     }
 
     fun openRelated(manga: Manga) = openRelated(setOf(manga))

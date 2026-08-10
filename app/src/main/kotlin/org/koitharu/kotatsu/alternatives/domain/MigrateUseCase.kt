@@ -5,10 +5,13 @@ import org.koitharu.kotatsu.core.db.MangaDatabase
 import org.koitharu.kotatsu.core.model.getPreferredBranch
 import org.koitharu.kotatsu.core.parser.MangaDataRepository
 import org.koitharu.kotatsu.core.parser.MangaRepository
+import org.koitharu.kotatsu.core.ui.model.MangaOverride
+import org.koitharu.kotatsu.core.util.ext.printStackTraceDebug
 import org.koitharu.kotatsu.details.domain.ProgressUpdateUseCase
 import org.koitharu.kotatsu.history.data.HistoryEntity
 import org.koitharu.kotatsu.history.data.toMangaHistory
 import org.koitharu.kotatsu.list.domain.ReadingProgress.Companion.PROGRESS_NONE
+import org.koitharu.kotatsu.local.domain.DeleteLocalMangaUseCase
 import org.koitharu.kotatsu.parsers.model.Manga
 import org.koitharu.kotatsu.parsers.model.MangaChapter
 import org.koitharu.kotatsu.parsers.util.runCatchingCancellable
@@ -24,17 +27,21 @@ constructor(
 	private val mangaDataRepository: MangaDataRepository,
 	private val database: MangaDatabase,
 	private val progressUpdateUseCase: ProgressUpdateUseCase,
+	private val deleteLocalMangaUseCase: DeleteLocalMangaUseCase,
 	private val scrobblers: Set<@JvmSuppressWildcards Scrobbler>,
 ) {
 	/**
 	 * @param copy when `true`, the original manga is kept (favourites and history are duplicated
 	 * onto [newManga] instead of moved, and tracking/scrobbling are left on the original).
 	 * When `false` (default) the original is replaced: its data is moved to [newManga].
+	 * @param options controls which data is carried over and whether the original's downloads are
+	 * deleted afterwards. Defaults to migrating everything and keeping downloads.
 	 */
 	suspend operator fun invoke(
 		oldManga: Manga,
 		newManga: Manga,
 		copy: Boolean = false,
+		options: MigrationOptions = MigrationOptions.DEFAULT,
 	) {
 		val oldDetails = if (oldManga.chapters.isNullOrEmpty()) {
 			runCatchingCancellable {
@@ -50,24 +57,23 @@ constructor(
 		}
 		mangaDataRepository.storeManga(newDetails, replaceExisting = true)
 		database.withTransaction {
-			// replace favorites
+			// replace favorites (category memberships). When categories are excluded we still add the
+			// new manga to the library, but collapse to a single membership instead of replicating
+			// every category the original belonged to.
 			val favoritesDao = database.getFavouritesDao()
 			val oldFavourites = favoritesDao.findAllRaw(oldDetails.id)
 			if (oldFavourites.isNotEmpty()) {
 				if (!copy) {
 					favoritesDao.delete(oldManga.id)
 				}
-				for (f in oldFavourites) {
-					val e =
-						f.copy(
-							mangaId = newManga.id,
-						)
-					favoritesDao.upsert(e)
+				val toCopy = if (options.migrateCategories) oldFavourites else oldFavourites.take(1)
+				for (f in toCopy) {
+					favoritesDao.upsert(f.copy(mangaId = newManga.id))
 				}
 			}
-			// replace history
+			// replace history / reading progress (the "Chapters" data option)
 			val historyDao = database.getHistoryDao()
-			val oldHistory = historyDao.find(oldDetails.id)
+			val oldHistory = if (options.migrateChapters) historyDao.find(oldDetails.id) else null
 			val newHistory =
 				if (oldHistory != null) {
 					val newHistory = makeNewHistory(oldDetails, newDetails, oldHistory)
@@ -127,7 +133,34 @@ constructor(
 				}
 			}
 		}
+		// Custom cover override — done outside the DB transaction because setOverride opens its own.
+		if (options.migrateCover) {
+			val oldOverride = mangaDataRepository.getOverride(oldManga.id)
+			if (oldOverride?.coverUrl != null) {
+				val newOverride = mangaDataRepository.getOverride(newDetails.id)
+				mangaDataRepository.setOverride(
+					newDetails,
+					MangaOverride(
+						coverUrl = oldOverride.coverUrl,
+						title = newOverride?.title,
+						contentRating = newOverride?.contentRating,
+					),
+				)
+				if (!copy) {
+					mangaDataRepository.setOverride(oldManga, null)
+				}
+			}
+		}
 		progressUpdateUseCase(newManga)
+		// Delete the original's downloaded chapters after a non-copy migration. No-op (and ignored)
+		// when nothing is saved locally — deleteLocalMangaUseCase throws in that case.
+		if (!copy && options.deleteDownloads) {
+			runCatchingCancellable {
+				deleteLocalMangaUseCase(oldManga)
+			}.onFailure {
+				it.printStackTraceDebug()
+			}
+		}
 	}
 
 	private fun makeNewHistory(

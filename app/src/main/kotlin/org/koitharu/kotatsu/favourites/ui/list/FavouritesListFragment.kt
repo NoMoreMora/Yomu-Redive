@@ -102,7 +102,7 @@ class FavouritesListFragment : MangaListFragment(), PopupMenu.OnMenuItemClickLis
 				when {
 					items.isEmpty() -> Unit
 					items.size == 1 -> router.openAlternatives(items.first())
-					else -> router.openMigrationSource(items.map { it.id })
+					else -> router.openMigrationList(items.map { it.id })
 				}
 				mode?.finish()
 				true

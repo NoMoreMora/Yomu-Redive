@@ -36,6 +36,7 @@ class AlternativesUseCase @Inject constructor(
 		throughDisabledSources: Boolean,
 		targetSource: MangaSource? = null,
 		query: String? = null,
+		advancedSearch: Boolean = false,
 	): Flow<Manga> {
 		val sources = if (targetSource != null) {
 			listOf(targetSource)
@@ -46,6 +47,8 @@ class AlternativesUseCase @Inject constructor(
 			return emptyFlow()
 		}
 		val searchQuery = query?.takeIf { it.isNotBlank() } ?: manga.title
+		// SIMPLE search skips the strict almost-equals title filter for a wider match set.
+		val searchKind = if (advancedSearch) SearchKind.SIMPLE else SearchKind.TITLE
 		val semaphore = Semaphore(MAX_PARALLELISM)
 		return channelFlow {
 			for (source in sources) {
@@ -53,7 +56,7 @@ class AlternativesUseCase @Inject constructor(
 					val searchHelper = searchHelperFactory.create(source)
 					val list = runCatchingCancellable {
 						semaphore.withPermit {
-							searchHelper(searchQuery, SearchKind.TITLE)?.manga
+							searchHelper(searchQuery, searchKind)?.manga
 						}
 					}.getOrNull()
 					list?.forEach { m ->
