@@ -129,6 +129,16 @@ val Manga.isLocal: Boolean
 val Manga.isBroken: Boolean
 	get() = source == UnknownMangaSource
 
+/** Key prefix of the tag that records the original source of a Tachiyomi-imported (broken) manga. */
+const val IMPORTED_SOURCE_TAG_KEY_PREFIX = "imported-source:"
+
+/**
+ * For a broken (Tachiyomi-imported) manga, the original source's display name carried on a tag, or
+ * `null`. Lets the UI show the origin (e.g. "Manganato") instead of "Unknown".
+ */
+val Manga.importedSourceName: String?
+	get() = if (isBroken) tags.firstOrNull { it.key.startsWith(IMPORTED_SOURCE_TAG_KEY_PREFIX) }?.title else null
+
 val Manga.appUrl: Uri
 	get() = "https://kotatsu.app/manga".toUri()
 		.buildUpon()

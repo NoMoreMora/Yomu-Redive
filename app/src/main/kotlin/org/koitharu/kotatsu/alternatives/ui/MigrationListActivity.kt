@@ -21,7 +21,7 @@ import androidx.recyclerview.widget.RecyclerView
 import dagger.hilt.android.AndroidEntryPoint
 import org.koitharu.kotatsu.R
 import org.koitharu.kotatsu.core.model.getTitle
-import org.koitharu.kotatsu.core.model.isBroken
+import org.koitharu.kotatsu.core.model.importedSourceName
 import org.koitharu.kotatsu.core.model.parcelable.ParcelableManga
 import org.koitharu.kotatsu.core.nav.AppRouter
 import org.koitharu.kotatsu.core.nav.router
@@ -221,10 +221,12 @@ class MigrationListActivity : BaseActivity<ActivityMigrationListBinding>(), Menu
 			binding.root.alpha = if (row.skipped) 0.4f else 1f
 			binding.imageViewCoverFrom.setImageAsync(row.original.coverUrl, row.original)
 			binding.textViewTitleFrom.text = row.original.title
-			binding.textViewSourceFrom.text = row.original.source.getTitle(ctx)
-			// Broken (e.g. Tachiyomi-imported) manga have no chapter list, so "Latest" would read 0;
-			// show the continue-from chapter instead so there is a position to migrate from.
-			binding.textViewLatestFrom.text = if (row.original.isBroken && row.continueChapter > 0f) {
+			// Show the original source (e.g. "Manganato") for imported/broken manga instead of "Unknown".
+			binding.textViewSourceFrom.text = row.original.importedSourceName ?: row.original.source.getTitle(ctx)
+			// A broken/unavailable source — a Tachiyomi import (UnknownMangaSource) OR a parser that is
+			// down (e.g. MangaBuddy showing 404) — can't provide a chapter list, so "Latest" reads 0.
+			// Whenever we know the reading position, show the continue-from chapter instead.
+			binding.textViewLatestFrom.text = if (row.originalChaptersCount == 0 && row.continueChapter > 0f) {
 				val n = row.continueChapter
 				val label = if (n % 1f == 0f) n.toInt().toString() else n.toString()
 				ctx.getString(R.string.migration_read_chapter, label)

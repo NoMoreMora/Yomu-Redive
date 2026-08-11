@@ -1,12 +1,15 @@
 package org.koitharu.kotatsu.backups.data.tachiyomi
 
+import android.content.Context
 import androidx.room.withTransaction
 import dagger.Reusable
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.serialization.protobuf.ProtoBuf
 import org.koitharu.kotatsu.core.db.MangaDatabase
 import org.koitharu.kotatsu.core.db.entity.MangaEntity
 import org.koitharu.kotatsu.core.db.entity.TagEntity
+import org.koitharu.kotatsu.core.model.IMPORTED_SOURCE_TAG_KEY_PREFIX
 import org.koitharu.kotatsu.core.model.UnknownMangaSource
 import org.koitharu.kotatsu.core.util.CompositeResult
 import org.koitharu.kotatsu.core.util.DebugLog
@@ -33,16 +36,24 @@ import javax.inject.Inject
  */
 @Reusable
 class TachiyomiBackupImporter @Inject constructor(
+	@ApplicationContext private val context: Context,
 	private val database: MangaDatabase,
 ) {
 
 	private val protoBuf = ProtoBuf
+
+	// Tachiyomi source id -> extension name, bundled from the keiyoushi extensions index (the backup
+	// itself doesn't store names once the extension is uninstalled). Loaded lazily on first import.
+	private val sourceNames: Map<Long, String> by lazy { loadSourceNames() }
 
 	suspend fun import(input: InputStream, progress: FlowCollector<Progress>?): CompositeResult {
 		progress?.emit(Progress.INDETERMINATE)
 		val bytes = GZIPInputStream(input).use { it.readBytes() }
 		val backup = protoBuf.decodeFromByteArray(TachiyomiBackup.serializer(), bytes)
 		DebugLog.d("Tachiyomi import: ${backup.backupManga.size} manga, ${backup.backupCategories.size} categories")
+		// A human label per source id: the real extension name where known, else the site domain from
+		// a manga URL. Used to tag imports so their origin is identifiable and filterable.
+		val sourceLabels = buildSourceLabels(backup.backupManga)
 		// Recreate categories (Tachiyomi manga reference them by their `order`).
 		val categoryIdByOrder = importCategories(backup.backupCategories)
 		val fallbackCategoryId = if (backup.backupManga.any { it.categories.isEmpty() }) {
@@ -56,7 +67,7 @@ class TachiyomiBackupImporter @Inject constructor(
 		for (manga in backup.backupManga) {
 			result += runCatchingCancellable {
 				database.withTransaction {
-					database.importManga(manga, categoryIdByOrder, fallbackCategoryId)
+					database.importManga(manga, categoryIdByOrder, fallbackCategoryId, sourceLabels)
 				}
 			}.onFailure {
 				DebugLog.e("Tachiyomi import failed for '${manga.title}' (${manga.chapters.size} ch)", it)
@@ -96,14 +107,28 @@ class TachiyomiBackupImporter @Inject constructor(
 		manga: TachiyomiBackupManga,
 		categoryIdByOrder: Map<Long, Long>,
 		fallbackCategoryId: Long?,
+		sourceLabels: Map<Long, String>,
 	) {
 		val source = UnknownMangaSource.name
 		val mangaId = "${manga.source}|${manga.url}".longHashCode()
-		val tags = manga.genre.mapNotNull { genre ->
-			val key = genre.trim().takeIf { it.isNotEmpty() } ?: return@mapNotNull null
+		val tags = manga.genre.mapNotNullTo(ArrayList()) { genre ->
+			val key = genre.trim().takeIf { it.isNotEmpty() } ?: return@mapNotNullTo null
 			TagEntity(
 				id = "${key}_$source".longHashCode(),
 				title = key,
+				key = key,
+				source = source,
+				isPinned = false,
+			)
+		}
+		// Origin tag: keeps the source column "UNKNOWN" (so isBroken/migration are unaffected) while
+		// letting the user identify and filter imports by their original source. One shared tag per
+		// source id.
+		sourceLabels[manga.source]?.let { label ->
+			val key = "$IMPORTED_SOURCE_TAG_KEY_PREFIX${manga.source}"
+			tags += TagEntity(
+				id = key.longHashCode(),
+				title = label,
 				key = key,
 				source = source,
 				isPinned = false,
@@ -202,7 +227,40 @@ class TachiyomiBackupImporter @Inject constructor(
 		else -> null
 	}
 
+	/** Resolves a display label for every source id used in the backup (real name, else site domain). */
+	private fun buildSourceLabels(mangaList: List<TachiyomiBackupManga>): Map<Long, String> {
+		val result = HashMap<Long, String>()
+		for (manga in mangaList) {
+			val sid = manga.source
+			if (sid in result) {
+				continue
+			}
+			val label = sourceNames[sid]
+				?: manga.url.substringAfter("://", "").substringBefore('/').takeIf { it.isNotEmpty() }
+			if (label != null) {
+				result[sid] = label
+			}
+		}
+		return result
+	}
+
+	/** Parses the bundled `id\tname` table (from the keiyoushi extensions index) into a lookup map. */
+	private fun loadSourceNames(): Map<Long, String> = runCatching {
+		context.assets.open(SOURCE_NAMES_ASSET).bufferedReader().useLines { lines ->
+			val map = HashMap<Long, String>(2048)
+			for (line in lines) {
+				val tab = line.indexOf('\t')
+				if (tab > 0) {
+					val id = line.substring(0, tab).toLongOrNull() ?: continue
+					map[id] = line.substring(tab + 1)
+				}
+			}
+			map
+		}
+	}.getOrDefault(emptyMap())
+
 	private companion object {
 		private const val FALLBACK_CATEGORY_TITLE = "Imported"
+		private const val SOURCE_NAMES_ASSET = "tachiyomi_sources.tsv"
 	}
 }

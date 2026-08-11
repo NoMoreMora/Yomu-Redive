@@ -107,6 +107,10 @@ class WelcomeViewModel @Inject constructor(
 		// auto-enable every source in that language — that floods a fresh install with dozens of
 		// sources. The user turns on the specific ones they want from the catalog.
 		settings.preferredSourcesLocale = locales.value.selectedItems.firstOrNull()?.language?.takeUnless { it.isEmpty() }
+		// Belt-and-suspenders: "Show all sources" makes the Explore grid list every source regardless
+		// of the per-source flags, which reads exactly like the old flood. Force it off during first-run
+		// setup so a fresh start is genuinely empty.
+		settings.isAllSourcesEnabled = false
 		repository.setSourcesEnabledExclusive(emptySet())
 	}
 }
