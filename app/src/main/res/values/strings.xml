@@ -46,6 +46,9 @@
     <string name="by_rating">Rating</string>
     <string name="sort_order">Sorting order</string>
     <string name="filter">Filter</string>
+    <string name="filter_and_sort">Filter and sort</string>
+    <string name="content_type">Content type</string>
+    <string name="sources">Sources</string>
     <string name="saved_filters">Saved filters</string>
     <string name="theme">Theme</string>
     <string name="light">Light</string>
@@ -662,15 +665,9 @@
     <string name="migrate_now">Migrate now</string>
     <string name="copy_now">Copy now</string>
     <string name="dont_migrate">Don\'t migrate</string>
-    <string name="migration_tablet_layout">Migration view (tablet)</string>
-    <string name="migration_layout_default">Default</string>
-    <string name="migration_layout_grid">Two-up grid</string>
-    <string name="migration_layout_wide">Full-width rows</string>
-    <string name="migration_layout_master_detail">Master-detail</string>
-    <string name="migration_layout_sidebar">List + sidebar</string>
-    <string name="migration_layout_carousel">Candidate carousel</string>
     <string name="migration_matched_count">Matched %1$d / %2$d</string>
     <string name="migration_select_a_row">Select an entry to review</string>
+	<string name="migration_select_to_find">Select a manga to find a match</string>
     <string name="migration_options">Migration options</string>
     <string name="migration_data_to_migrate">Data to migrate</string>
     <string name="migration_chapters">Chapters</string>

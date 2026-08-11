@@ -4,13 +4,20 @@ import android.content.Context
 import androidx.room.withTransaction
 import dagger.Reusable
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.FlowCollector
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.protobuf.ProtoBuf
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import org.json.JSONArray
+import org.json.JSONObject
 import org.koitharu.kotatsu.core.db.MangaDatabase
 import org.koitharu.kotatsu.core.db.entity.MangaEntity
 import org.koitharu.kotatsu.core.db.entity.TagEntity
 import org.koitharu.kotatsu.core.model.IMPORTED_SOURCE_TAG_KEY_PREFIX
 import org.koitharu.kotatsu.core.model.UnknownMangaSource
+import org.koitharu.kotatsu.core.network.BaseHttpClient
 import org.koitharu.kotatsu.core.util.CompositeResult
 import org.koitharu.kotatsu.core.util.DebugLog
 import org.koitharu.kotatsu.core.util.progress.Progress
@@ -19,9 +26,15 @@ import org.koitharu.kotatsu.favourites.data.FavouriteEntity
 import org.koitharu.kotatsu.history.data.HistoryEntity
 import org.koitharu.kotatsu.list.domain.ListSortOrder
 import org.koitharu.kotatsu.parsers.model.MangaState
+import org.koitharu.kotatsu.parsers.util.await
 import org.koitharu.kotatsu.parsers.util.longHashCode
+import org.koitharu.kotatsu.parsers.util.parseJson
 import org.koitharu.kotatsu.parsers.util.runCatchingCancellable
+import org.koitharu.kotatsu.scrobbling.common.data.ScrobblingEntity
+import org.koitharu.kotatsu.scrobbling.common.domain.model.ScrobblerService
+import java.io.File
 import java.io.InputStream
+import java.util.concurrent.TimeUnit
 import java.util.zip.GZIPInputStream
 import javax.inject.Inject
 
@@ -38,16 +51,24 @@ import javax.inject.Inject
 class TachiyomiBackupImporter @Inject constructor(
 	@ApplicationContext private val context: Context,
 	private val database: MangaDatabase,
+	@BaseHttpClient private val okHttp: OkHttpClient,
 ) {
 
 	private val protoBuf = ProtoBuf
 
-	// Tachiyomi source id -> extension name, bundled from the keiyoushi extensions index (the backup
-	// itself doesn't store names once the extension is uninstalled). Loaded lazily on first import.
-	private val sourceNames: Map<Long, String> by lazy { loadSourceNames() }
+	// Tachiyomi source id -> extension name. Baseline comes from the bundled keiyoushi snapshot (the
+	// backup itself doesn't store names once the extension is uninstalled), overlaid at import time with
+	// a disk-cached fetch of the live keiyoushi index. Populated at the start of import() from
+	// loadSourceNames() so a freshly refreshed cache is reflected (see refreshSourceNamesCache).
+	private var sourceNames: Map<Long, String> = emptyMap()
 
 	suspend fun import(input: InputStream, progress: FlowCollector<Progress>?): CompositeResult {
 		progress?.emit(Progress.INDETERMINATE)
+		// Best-effort refresh of the source-name map from the live keiyoushi index before we build labels,
+		// so newly added sources resolve. Fully offline-safe: any failure keeps the bundled asset + last
+		// good cache. Then (re)build the lookup so a fresh cache is picked up.
+		refreshSourceNamesCache()
+		sourceNames = loadSourceNames()
 		val bytes = GZIPInputStream(input).use { it.readBytes() }
 		val backup = protoBuf.decodeFromByteArray(TachiyomiBackup.serializer(), bytes)
 		DebugLog.d("Tachiyomi import: ${backup.backupManga.size} manga, ${backup.backupCategories.size} categories")
@@ -172,6 +193,54 @@ class TachiyomiBackupImporter @Inject constructor(
 		// through the series the user had read as a percent. Migration maps that fraction back onto the
 		// matched source's chapter list (see MigrateUseCase.makeNewHistory).
 		buildImportedHistory(manga, mangaId)?.let { getHistoryDao().upsert(it) }
+		importTracking(manga, mangaId)
+	}
+
+	/**
+	 * Best-effort import of Tachiyomi tracking links into Kotatsu's scrobblings, for the four trackers
+	 * Kotatsu supports. Only the target id (the tracker's own media id) and last-read chapter are
+	 * carried — enough to relink and re-sync once the user signs in to that tracker, and to survive
+	 * Migration onto a real source (see MigrateUseCase). Score and per-tracker status strings are
+	 * left unset; unsupported trackers (Bangumi, MangaUpdates, Komga, Suwayomi, …) are skipped.
+	 */
+	private suspend fun MangaDatabase.importTracking(manga: TachiyomiBackupManga, mangaId: Long) {
+		if (manga.tracking.isEmpty()) {
+			return
+		}
+		val dao = getScrobblingDao()
+		for (track in manga.tracking) {
+			val service = track.syncId.toScrobblerService() ?: continue
+			// Prefer the 64-bit media id; fall back to the legacy 32-bit one from older backups.
+			val targetId = if (track.mediaId != 0L) track.mediaId else track.mediaIdInt.toLong()
+			if (targetId == 0L) {
+				continue
+			}
+			dao.upsert(
+				ScrobblingEntity(
+					scrobbler = service.id,
+					// No local rate id until the user signs in and Kotatsu relinks; 0 = "imported".
+					id = 0,
+					mangaId = mangaId,
+					targetId = targetId,
+					status = null,
+					chapter = track.lastChapterRead.toInt().coerceAtLeast(0),
+					comment = null,
+					rating = 0f,
+				),
+			)
+		}
+	}
+
+	/**
+	 * Maps a Tachiyomi tracker id to the equivalent Kotatsu [ScrobblerService], or `null` when Kotatsu
+	 * has no matching tracker. Note the id spaces differ between the two apps.
+	 */
+	private fun Int.toScrobblerService(): ScrobblerService? = when (this) {
+		1 -> ScrobblerService.MAL // Tachiyomi MyAnimeList
+		2 -> ScrobblerService.ANILIST
+		3 -> ScrobblerService.KITSU
+		4 -> ScrobblerService.SHIKIMORI
+		else -> null
 	}
 
 	/**
@@ -244,27 +313,118 @@ class TachiyomiBackupImporter @Inject constructor(
 		return result
 	}
 
-	/** Parses the bundled `id\tname` table (from the keiyoushi extensions index) into a lookup map. */
-	private fun loadSourceNames(): Map<Long, String> = runCatching {
-		context.assets.open(SOURCE_NAMES_ASSET).bufferedReader().useLines { lines ->
-			val map = HashMap<Long, String>(2048)
-			for (line in lines) {
-				val tab = line.indexOf('\t')
-				if (tab > 0) {
-					val id = line.substring(0, tab).toLongOrNull()
-					// trim() guards against a stray CR if the asset is checked out with CRLF endings.
-					val name = line.substring(tab + 1).trim()
-					if (id != null && name.isNotEmpty()) {
-						map[id] = name
-					}
+	/**
+	 * Builds the source-id -> name lookup: the bundled `id\tname` asset (baseline) overlaid with the
+	 * disk cache written by [refreshSourceNamesCache] (cache wins on conflicts). A missing or corrupt
+	 * cache simply leaves the bundled map untouched, so this always returns at least the snapshot.
+	 */
+	private fun loadSourceNames(): Map<Long, String> {
+		val map = HashMap<Long, String>(2048)
+		// Bundled snapshot first — the guaranteed baseline.
+		runCatching {
+			context.assets.open(SOURCE_NAMES_ASSET).bufferedReader().useLines { parseSourceNameLines(it, map) }
+		}
+		// Live cache overlay — same tab-separated format; entries here overwrite the snapshot.
+		runCatching {
+			val cache = cacheFile()
+			if (cache.exists()) {
+				cache.bufferedReader().useLines { parseSourceNameLines(it, map) }
+			}
+		}
+		return map
+	}
+
+	/** Folds CRLF-safe `id\tname` lines into [into]; later lines win (used for both asset and cache). */
+	private fun parseSourceNameLines(lines: Sequence<String>, into: HashMap<Long, String>) {
+		for (line in lines) {
+			val tab = line.indexOf('\t')
+			if (tab > 0) {
+				val id = line.substring(0, tab).toLongOrNull()
+				// trim() guards against a stray CR if the file is written/checked out with CRLF endings.
+				val name = line.substring(tab + 1).trim()
+				if (id != null && name.isNotEmpty()) {
+					into[id] = name
 				}
 			}
-			map
 		}
-	}.getOrDefault(emptyMap())
+	}
+
+	private fun cacheFile() = File(context.cacheDir, SOURCE_NAMES_CACHE)
+
+	/**
+	 * Best-effort: when the on-disk cache is missing or older than [CACHE_TTL_MS], fetch the live
+	 * keiyoushi index, parse it, and (re)write the cache as `id\tname` lines. Runs on IO and never
+	 * throws — no network, a failed fetch, or an unexpected payload all degrade silently to the bundled
+	 * asset plus whatever cache already exists. Fresh within the TTL window means zero network.
+	 */
+	private suspend fun refreshSourceNamesCache() = withContext(Dispatchers.IO) {
+		runCatchingCancellable {
+			val cache = cacheFile()
+			val fresh = cache.exists() && System.currentTimeMillis() - cache.lastModified() < CACHE_TTL_MS
+			if (fresh) {
+				return@runCatchingCancellable
+			}
+			val request = Request.Builder().url(KEIYOUSHI_INDEX_URL).get().build()
+			val index = okHttp.newCall(request).await().parseJson()
+			val names = parseKeiyoushiIndex(index)
+			// Keep the last good cache if the payload yielded nothing (e.g. an unexpected shape).
+			if (names.isNotEmpty()) {
+				writeCache(cache, names)
+			}
+		}.onFailure {
+			DebugLog.e("Tachiyomi source-name refresh failed; using bundled asset + last cache", it)
+		}
+		Unit
+	}
+
+	/**
+	 * Extracts `id.toLong() -> name` from the keiyoushi index JSON
+	 * (`extensionList.extensions[].sources[]` with `id`/`name`; also tolerates a top-level `extensions`
+	 * array). Blanks are skipped and the first non-blank name wins on duplicate ids.
+	 */
+	private fun parseKeiyoushiIndex(root: JSONObject): Map<Long, String> {
+		val extensions: JSONArray = root.optJSONObject("extensionList")?.optJSONArray("extensions")
+			?: root.optJSONArray("extensions")
+			?: return emptyMap()
+		val map = HashMap<Long, String>(extensions.length().coerceAtLeast(0) * 2)
+		for (i in 0 until extensions.length()) {
+			val sources = extensions.optJSONObject(i)?.optJSONArray("sources") ?: continue
+			for (j in 0 until sources.length()) {
+				val src = sources.optJSONObject(j) ?: continue
+				val id = src.optString("id").toLongOrNull() ?: continue
+				val name = src.optString("name").trim()
+				if (name.isNotEmpty() && id !in map) {
+					map[id] = name
+				}
+			}
+		}
+		return map
+	}
+
+	/** Writes the map as `id\tname` lines via a temp file + rename so a reader never sees a partial file. */
+	private fun writeCache(cache: File, names: Map<Long, String>) {
+		val tmp = File(cache.parentFile, "${cache.name}.tmp")
+		tmp.bufferedWriter().use { writer ->
+			for ((id, name) in names) {
+				writer.append(id.toString()).append('\t').append(name).append('\n')
+			}
+		}
+		if (cache.exists()) {
+			cache.delete()
+		}
+		if (!tmp.renameTo(cache)) {
+			// Rename can fail across some filesystems; fall back to a direct copy.
+			cache.writeText(tmp.readText())
+			tmp.delete()
+		}
+	}
 
 	private companion object {
 		private const val FALLBACK_CATEGORY_TITLE = "Imported"
 		private const val SOURCE_NAMES_ASSET = "tachiyomi_sources.tsv"
+		private const val SOURCE_NAMES_CACHE = "tachiyomi_sources_cache.tsv"
+		private const val KEIYOUSHI_INDEX_URL =
+			"https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.json"
+		private val CACHE_TTL_MS = TimeUnit.DAYS.toMillis(7)
 	}
 }

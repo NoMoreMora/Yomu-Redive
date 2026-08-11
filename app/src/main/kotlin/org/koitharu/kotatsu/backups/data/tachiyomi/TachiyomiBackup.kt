@@ -29,9 +29,35 @@ class TachiyomiBackupManga(
 	@ProtoNumber(16) val chapters: List<TachiyomiBackupChapter> = emptyList(),
 	// Category references — each value is a TachiyomiBackupCategory.order.
 	@ProtoNumber(17) val categories: List<Long> = emptyList(),
+	// Tracking links (field 18). Each entry ties the manga to a record on an external tracker
+	// (MyAnimeList / AniList / Kitsu / Shikimori). Imported best-effort into Kotatsu's scrobblings so
+	// the link and last-read position survive; unsupported trackers are ignored.
+	@ProtoNumber(18) val tracking: List<TachiyomiBackupTracking> = emptyList(),
 	// Per-chapter read timestamps (field 104 in the SY/Mihon schema). Sparse — most read state
 	// lives in the chapters' `read` flags instead; used only to date the imported progress.
 	@ProtoNumber(104) val history: List<TachiyomiBackupHistory> = emptyList(),
+)
+
+/**
+ * A tracking link on a [TachiyomiBackupManga]. Only the fields needed to relink and re-sync are
+ * decoded: [syncId] identifies the tracker, [mediaId] (or the legacy [mediaIdInt]) is the record's id
+ * on that tracker, and [lastChapterRead] is the read position. Score/status are tracker-specific and
+ * intentionally left out of the import.
+ */
+@Serializable
+class TachiyomiBackupTracking(
+	// Tachiyomi tracker id: 1 = MyAnimeList, 2 = AniList, 3 = Kitsu, 4 = Shikimori (others unsupported).
+	@ProtoNumber(1) val syncId: Int = 0,
+	// Legacy 32-bit media id used by older backups; superseded by the 64-bit [mediaId] below.
+	@ProtoNumber(3) val mediaIdInt: Int = 0,
+	@ProtoNumber(4) val trackingUrl: String = "",
+	@ProtoNumber(5) val title: String = "",
+	@ProtoNumber(6) val lastChapterRead: Float = 0f,
+	@ProtoNumber(7) val totalChapters: Int = 0,
+	@ProtoNumber(8) val score: Float = 0f,
+	@ProtoNumber(9) val status: Int = 0,
+	// The tracker's own media id (64-bit). Kotatsu keys tracking on this (ScrobblingEntity.targetId).
+	@ProtoNumber(100) val mediaId: Long = 0L,
 )
 
 /**

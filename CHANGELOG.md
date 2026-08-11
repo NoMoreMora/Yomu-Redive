@@ -5,6 +5,37 @@ fork of [Kotatsu-Redo](https://github.com/Kotatsu-Redo/Kotatsu-Redo). Releases u
 `major.minor.patch` numbers continuing the upstream line the fork forked from, so the in-app
 GitHub-releases updater treats each one as a normal upgrade.
 
+## [9.8.4-beta5] - 2026-08-11
+
+Development (pre-release) build for the in-app **Development** update channel.
+
+### Added
+
+- **Settings gear on the main screen.** A gear icon now sits beside the tabs — one tap opens Settings.
+  On phones the search bar is shortened to make room, and Settings has been removed from the search
+  bar's overflow menu (it used to live in two places).
+- **Manual matching from the migration screen.** On phones, tapping a manga on the right side opens a
+  Find Similar search — even when no match was found automatically — so you can pick the right manga
+  from any source, then return to the migration list with it matched.
+- **Find-Similar sidebar for tablets.** The migration screen's tablet layout now pairs the list with a
+  Find Similar panel for the selected manga, so you can compare candidates across sources and pick the
+  right one without leaving the screen.
+- **Filter & Sort for Favorites.** The Favorites tab has a dedicated filter/sort button (the funnel)
+  that opens a single sheet: pick any sort order, and filter by an expanded set — on device, new
+  chapters, completed, in progress, content type, and the full genre and source lists for that
+  category. Your choices are remembered per category, and **Reset** restores the defaults.
+- **Imported tracking links.** A Tachiyomi import now carries over your MyAnimeList / AniList / Kitsu /
+  Shikimori tracking links (best-effort), so the tracker connection and last-read position are
+  restored once you sign in to that service — and they survive migration to a new source.
+- **Source names stay current.** The Tachiyomi source-id → name map now refreshes itself from the live
+  keiyoushi extensions index (cached, offline-safe), so recently added sources resolve to their real
+  names.
+
+### Changed
+
+- Favorites filters are now **remembered** between sessions (per category) instead of resetting each
+  time you reopen the app.
+
 ## [9.8.4-beta4] - 2026-08-11
 
 Development (pre-release) build for the in-app **Development** update channel.

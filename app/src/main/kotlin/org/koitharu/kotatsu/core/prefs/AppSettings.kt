@@ -120,10 +120,6 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 		get() = prefs.getString(KEY_PREFERRED_SOURCES_LOCALE, null)
 		set(value) = prefs.edit { putString(KEY_PREFERRED_SOURCES_LOCALE, value) }
 
-	// Experimental tablet layout for the Migration review list (0 = default). See MigrationTabletLayout.
-	val migrationTabletLayout: Int
-		get() = prefs.getString(KEY_MIGRATION_TABLET_LAYOUT, null)?.toIntOrNull() ?: 0
-
 	var isMigrateChapters: Boolean
 		get() = prefs.getBoolean(KEY_MIGRATION_CHAPTERS, true)
 		set(value) = prefs.edit { putBoolean(KEY_MIGRATION_CHAPTERS, value) }
@@ -755,6 +751,21 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 		return result
 	}
 
+	fun favoritesFilterKey(categoryId: Long): String = KEY_FAVORITES_FILTER_PREFIX + categoryId
+
+	/**
+	 * Serialized filter options applied to a Favorites category (keyed by category id),
+	 * or `null` when the user has never configured a filter for this category yet.
+	 */
+	fun getFavoritesFilterOrNull(categoryId: Long): Set<String>? =
+		prefs.getStringSet(favoritesFilterKey(categoryId), null)
+
+	fun getFavoritesFilter(categoryId: Long): Set<String> = getFavoritesFilterOrNull(categoryId).orEmpty()
+
+	fun setFavoritesFilter(categoryId: Long, value: Set<String>) {
+		prefs.edit { putStringSet(favoritesFilterKey(categoryId), value) }
+	}
+
 	fun subscribe(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
 		prefs.registerOnSharedPreferenceChangeListener(listener)
 	}
@@ -966,6 +977,7 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 		const val KEY_LOCAL_LIST_ORDER = "local_order"
 		const val KEY_HISTORY_ORDER = "history_order"
 		const val KEY_FAVORITES_ORDER = "fav_order"
+		const val KEY_FAVORITES_FILTER_PREFIX = "fav_filter_"
 		const val KEY_WEBTOON_GAPS = "webtoon_gaps"
 		const val KEY_WEBTOON_ZOOM = "webtoon_zoom"
 		const val KEY_WEBTOON_ZOOM_OUT = "webtoon_zoom_out"
@@ -1020,7 +1032,6 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 		const val KEY_QUICK_FILTER = "quick_filter"
 		const val KEY_MIGRATION_PREFERRED_SOURCE = "migration_preferred_source"
 		const val KEY_PREFERRED_SOURCES_LOCALE = "preferred_sources_locale"
-		const val KEY_MIGRATION_TABLET_LAYOUT = "migration_tablet_layout"
 		const val KEY_MIGRATION_CHAPTERS = "migration_chapters"
 		const val KEY_MIGRATION_CATEGORIES = "migration_categories"
 		const val KEY_MIGRATION_COVER = "migration_cover"

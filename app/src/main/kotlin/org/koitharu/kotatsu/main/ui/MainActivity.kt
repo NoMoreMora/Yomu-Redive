@@ -63,6 +63,7 @@ import org.koitharu.kotatsu.core.util.ext.end
 import org.koitharu.kotatsu.core.util.ext.observe
 import org.koitharu.kotatsu.core.util.ext.observeEvent
 import org.koitharu.kotatsu.core.util.ext.printStackTraceDebug
+import org.koitharu.kotatsu.core.util.ext.resolveDp
 import org.koitharu.kotatsu.core.util.ext.start
 import org.koitharu.kotatsu.databinding.ActivityMainBinding
 import org.koitharu.kotatsu.details.service.MangaPrefetchService
@@ -115,6 +116,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), AppBarOwner, BottomNav
 		setSupportActionBar(viewBinding.searchBar)
 
 		viewBinding.fab?.setOnClickListener(this)
+		viewBinding.buttonSettings.setOnClickListener(this)
 		viewBinding.navRail?.headerView?.findViewById<View>(R.id.railFab)?.setOnClickListener(this)
 		(viewBinding.bottomNav as? FloatingBottomNavigationView)?.setOnContinueClickListener {
 			viewModel.openLastReader()
@@ -192,6 +194,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), AppBarOwner, BottomNav
 	override fun onClick(v: View) {
 		when (v.id) {
 			R.id.fab, R.id.railFab -> viewModel.openLastReader()
+			R.id.button_settings -> router.openSettings()
 		}
 	}
 
@@ -199,13 +202,25 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), AppBarOwner, BottomNav
 		val typeMask = WindowInsetsCompat.Type.systemBars()
 		val barsInsets = insets.getInsets(typeMask)
 		val searchBarDefaultMargin = resources.getDimensionPixelOffset(materialR.dimen.m3_searchbar_margin_horizontal)
-		viewBinding.searchBar.updateLayoutParams<MarginLayoutParams> {
-			marginEnd = searchBarDefaultMargin + barsInsets.end(v)
-			marginStart = if (viewBinding.navRail != null) {
-				searchBarDefaultMargin
-			} else {
-				searchBarDefaultMargin + barsInsets.start(v)
+		val endInset = barsInsets.end(v)
+		if (viewBinding.navRail != null) {
+			// Tablet: the gear overlaps the end of the search FrameLayout, so keep the
+			// search bar clear of it and let the gear itself clear the right system bar.
+			val gearWidth = resources.resolveDp(SETTINGS_BUTTON_SIZE_DP)
+			viewBinding.searchBar.updateLayoutParams<MarginLayoutParams> {
+				marginStart = searchBarDefaultMargin
+				marginEnd = gearWidth + searchBarDefaultMargin + endInset
 			}
+		} else {
+			// Phone: the search bar and the gear are siblings in a horizontal row,
+			// so the gear carries the end system-bar inset for the whole row.
+			viewBinding.searchBar.updateLayoutParams<MarginLayoutParams> {
+				marginStart = searchBarDefaultMargin + barsInsets.start(v)
+				marginEnd = searchBarDefaultMargin
+			}
+		}
+		viewBinding.buttonSettings.updateLayoutParams<MarginLayoutParams> {
+			marginEnd = searchBarDefaultMargin + endInset
 		}
 		viewBinding.bottomNav?.let { nav ->
 			val isFloating = settings.isFloatingNavBar
@@ -468,5 +483,10 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), AppBarOwner, BottomNav
 		}
 		addTransitionListener(listener)
 		awaitClose { removeTransitionListener(listener) }
+	}
+
+	private companion object {
+
+		private const val SETTINGS_BUTTON_SIZE_DP = 48
 	}
 }

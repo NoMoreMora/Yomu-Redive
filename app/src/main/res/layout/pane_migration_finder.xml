@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:orientation="vertical">
+
+	<LinearLayout
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:baselineAligned="false"
+		android:gravity="center_vertical"
+		android:orientation="horizontal"
+		android:paddingStart="@dimen/margin_normal"
+		android:paddingEnd="@dimen/margin_small">
+
+		<TextView
+			android:id="@+id/textView_count"
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:layout_weight="1"
+			android:textAppearance="?attr/textAppearanceBodyMedium"
+			tools:text="Matched 3 / 12" />
+
+		<com.google.android.material.button.MaterialButton
+			android:id="@+id/button_search"
+			style="@style/Widget.Material3.Button.TextButton"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:text="@string/search_manually" />
+
+	</LinearLayout>
+
+	<TextView
+		android:id="@+id/textView_hint"
+		android:layout_width="match_parent"
+		android:layout_height="0dp"
+		android:layout_weight="1"
+		android:gravity="center"
+		android:padding="@dimen/margin_normal"
+		android:text="@string/migration_select_to_find"
+		android:textAppearance="?attr/textAppearanceBodyMedium"
+		android:textColor="?android:attr/textColorSecondary" />
+
+	<androidx.fragment.app.FragmentContainerView
+		android:id="@+id/fragment_container"
+		android:layout_width="match_parent"
+		android:layout_height="0dp"
+		android:layout_weight="1"
+		android:visibility="gone"
+		tools:visibility="visible" />
+
+</LinearLayout>

@@ -68,6 +68,7 @@ import org.koitharu.kotatsu.download.ui.dialog.DownloadDialogFragment
 import org.koitharu.kotatsu.download.ui.list.DownloadsActivity
 import org.koitharu.kotatsu.favourites.ui.FavouritesActivity
 import org.koitharu.kotatsu.favourites.ui.categories.FavouriteCategoriesActivity
+import org.koitharu.kotatsu.favourites.ui.list.filter.FavoritesFilterSortSheet
 import org.koitharu.kotatsu.favourites.ui.categories.edit.FavouritesCategoryEditActivity
 import org.koitharu.kotatsu.favourites.ui.categories.select.FavoriteDialog
 import org.koitharu.kotatsu.filter.ui.FilterCoordinator
@@ -523,6 +524,12 @@ class AppRouter private constructor(
     fun showListConfigSheet(section: ListConfigSection) {
         ListConfigBottomSheet().withArgs(1) {
             putParcelable(KEY_LIST_SECTION, section)
+        }.showDistinct()
+    }
+
+    fun showFavoritesFilterSheet(categoryId: Long) {
+        FavoritesFilterSortSheet().withArgs(1) {
+            putLong(KEY_ID, categoryId)
         }.showDistinct()
     }
 

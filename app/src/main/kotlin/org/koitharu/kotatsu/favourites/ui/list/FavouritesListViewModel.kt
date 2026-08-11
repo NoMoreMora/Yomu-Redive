@@ -53,13 +53,13 @@ class FavouritesListViewModel @Inject constructor(
 	private val mangaListMapper: MangaListMapper,
 	private val markAsReadUseCase: MarkAsReadUseCase,
 	quickFilterFactory: FavoritesListQuickFilter.Factory,
-	settings: AppSettings,
+	private val settings: AppSettings,
 	mangaDataRepository: MangaDataRepository,
 	@LocalStorageChanges localStorageChanges: SharedFlow<LocalManga?>,
 ) : MangaListViewModel(settings, mangaDataRepository, localStorageChanges), QuickFilterListener {
 
 	val categoryId: Long = savedStateHandle[AppRouter.KEY_ID] ?: NO_ID
-	private val quickFilter = quickFilterFactory.create(categoryId)
+	private val quickFilter = quickFilterFactory.create(categoryId, viewModelScope + Dispatchers.Default)
 	private val refreshTrigger = MutableStateFlow(Any())
 	private val limit = MutableStateFlow(PAGE_SIZE)
 	private val isPaginationReady = AtomicBoolean(false)
@@ -133,10 +133,11 @@ class FavouritesListViewModel @Inject constructor(
 
 	fun setSortOrder(order: ListSortOrder) {
 		if (categoryId == NO_ID) {
-			return
-		}
-		launchJob {
-			repository.setCategoryOrder(categoryId, order)
+			settings.allFavoritesSortOrder = order
+		} else {
+			launchJob {
+				repository.setCategoryOrder(categoryId, order)
+			}
 		}
 	}
 

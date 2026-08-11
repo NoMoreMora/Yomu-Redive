@@ -20,7 +20,6 @@ import androidx.core.view.MenuProvider
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
-import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.R as materialR
@@ -34,18 +33,15 @@ import org.koitharu.kotatsu.core.nav.router
 import org.koitharu.kotatsu.core.ui.BaseActivity
 import org.koitharu.kotatsu.core.ui.dialog.buildAlertDialog
 import org.koitharu.kotatsu.core.util.ext.consumeAllSystemBarsInsets
+import org.koitharu.kotatsu.core.util.ext.getParcelableCompat
 import org.koitharu.kotatsu.core.util.ext.getParcelableExtraCompat
 import org.koitharu.kotatsu.core.util.ext.getThemeColor
 import org.koitharu.kotatsu.core.util.ext.observe
 import org.koitharu.kotatsu.core.util.ext.observeEvent
 import org.koitharu.kotatsu.core.util.ext.systemBarsInsets
 import org.koitharu.kotatsu.databinding.ActivityMigrationListBinding
-import org.koitharu.kotatsu.databinding.ItemMigrationCandidateBinding
 import org.koitharu.kotatsu.databinding.ItemMigrationListBinding
-import org.koitharu.kotatsu.databinding.ItemMigrationListCarouselBinding
-import org.koitharu.kotatsu.databinding.ItemMigrationListWideBinding
-import org.koitharu.kotatsu.databinding.PaneMigrationDetailBinding
-import org.koitharu.kotatsu.databinding.PaneMigrationSidebarBinding
+import org.koitharu.kotatsu.databinding.PaneMigrationFinderBinding
 import org.koitharu.kotatsu.image.ui.CoverImageView
 import org.koitharu.kotatsu.parsers.model.Manga
 import org.koitharu.kotatsu.parsers.model.MangaSource
@@ -67,10 +63,12 @@ class MigrationListActivity : BaseActivity<ActivityMigrationListBinding>(), Menu
 	// Sources currently shown in the dropdown (parallel to the dropdown entries; last entry is "More…").
 	private var dropdownSources: List<MangaSource> = emptyList()
 
-	// Inflated content of the right-hand pane (master-detail = design 3, sidebar = design 4); null when
-	// the current layout has no pane, so modes 0/1/2/5 leave the pane empty and gone.
-	private var detailBinding: PaneMigrationDetailBinding? = null
-	private var sidebarBinding: PaneMigrationSidebarBinding? = null
+	// Inflated content of the tablet finder pane; null on phones, where the pane stays gone.
+	private var finderBinding: PaneMigrationFinderBinding? = null
+
+	// Tablet uses the List + sidebar layout: the row list on the left, the AlternativesFragment finder on
+	// the right. Phones show the plain single-column list with the pane gone.
+	private val isSidebarLayout get() = resources.getBoolean(R.bool.is_tablet)
 
 	private val selectionColor by lazy(LazyThreadSafetyMode.NONE) {
 		getThemeColor(materialR.attr.colorSurfaceVariant)
@@ -98,34 +96,41 @@ class MigrationListActivity : BaseActivity<ActivityMigrationListBinding>(), Menu
 		setContentView(ActivityMigrationListBinding.inflate(layoutInflater))
 		supportActionBar?.setDisplayHomeAsUpEnabled(true)
 		viewBinding.recyclerView.adapter = adapter
-		val mode = if (resources.getBoolean(R.bool.is_tablet)) viewModel.tabletLayout else 0
-		configureLayout(mode)
+		viewBinding.recyclerView.layoutManager = LinearLayoutManager(this)
+		if (isSidebarLayout) {
+			setupSidebar()
+		}
 		addMenuProvider(this)
 		viewBinding.dropdownSource.setOnItemClickListener { _, _, position, _ ->
 			onSourceSelected(position)
 		}
-		viewModel.content.observe(this) {
-			adapter.submit(it)
-			updateSidebarCount()
-			if (adapter.layoutMode == LAYOUT_MASTER_DETAIL) {
-				renderDetailPane(viewModel.selectedRowId.value)
+		supportFragmentManager.setFragmentResultListener(AlternativesFragment.REQUEST_PICK, this) { _, bundle ->
+			val picked = bundle.getParcelableCompat<ParcelableManga>(AppRouter.KEY_MANGA)?.manga
+			val selectedId = viewModel.selectedRowId.value
+			if (picked != null && selectedId != null) {
+				viewModel.setMatch(selectedId, picked)
 			}
 		}
-		viewModel.matchedCount.observe(this) { updateSidebarCount() }
+		viewModel.content.observe(this) {
+			adapter.submit(it)
+			updateFinderCount()
+		}
+		viewModel.matchedCount.observe(this) { updateFinderCount() }
 		viewModel.selectedRowId.observe(this) { id ->
-			if (adapter.layoutMode == LAYOUT_MASTER_DETAIL) {
+			if (isSidebarLayout) {
 				adapter.setSelectedId(id)
-				renderDetailPane(id)
+				renderFinderFragment(id)
 			}
 		}
 		viewModel.availableSources.observe(this) {
 			rebuildSourceDropdown(it, viewModel.targetSource.value)
-			rebuildSidebarDropdown(it, viewModel.targetSource.value)
 		}
 		viewModel.targetSource.observe(this) { source ->
 			rebuildSourceDropdown(viewModel.availableSources.value, source)
-			rebuildSidebarDropdown(viewModel.availableSources.value, source)
 			viewBinding.dropdownSource.setText(source?.getTitle(this).orEmpty(), false)
+			if (isSidebarLayout) {
+				hostedFinderFragment()?.setTargetSourceByName(source?.name)
+			}
 		}
 		viewModel.onRowMigrated.observeEvent(this) {
 			Toast.makeText(this, R.string.migration_completed, Toast.LENGTH_SHORT).show()
@@ -239,126 +244,71 @@ class MigrationListActivity : BaseActivity<ActivityMigrationListBinding>(), Menu
 		}
 	}
 
-	// region Layout switching (tablet)
+	// region Tablet List + sidebar layout
 
 	/**
-	 * Applies one of the 5 tablet layouts (see the Developer options selector). Sets the RecyclerView
-	 * layout manager, the adapter view type, and shows/hides the right-hand pane. For modes 0/1/2/5 the
-	 * pane is emptied and gone, so they render exactly like the phone layout.
+	 * Sets up the tablet List + sidebar layout: the row list on the left sharing space with the right-hand
+	 * finder pane, which hosts a per-row [AlternativesFragment]. Only called when [isSidebarLayout] is true;
+	 * on phones the pane stays gone and the list fills the screen.
 	 */
-	private fun configureLayout(mode: Int) {
-		adapter.layoutMode = mode
+	private fun setupSidebar() {
 		val pane = viewBinding.detailPane
-		viewBinding.recyclerView.layoutManager = if (mode == LAYOUT_GRID) {
-			GridLayoutManager(this, 2)
-		} else {
-			LinearLayoutManager(this)
-		}
-		detailBinding = null
-		sidebarBinding = null
-		pane.removeAllViews()
-		when (mode) {
-			LAYOUT_MASTER_DETAIL -> {
-				setPaneWeights(recyclerWeight = 40f, paneWeight = 60f)
-				pane.isVisible = true
-				renderDetailPane(viewModel.selectedRowId.value)
-			}
-
-			LAYOUT_SIDEBAR -> {
-				setPaneWeights(recyclerWeight = 65f, paneWeight = 35f)
-				pane.isVisible = true
-				renderSidebar()
-			}
-
-			else -> {
-				setPaneWeights(recyclerWeight = 1f, paneWeight = 0f)
-				pane.isVisible = false
-			}
-		}
-		adapter.notifyDataSetChanged()
+		(viewBinding.recyclerView.layoutParams as LinearLayout.LayoutParams).weight = 65f
+		(pane.layoutParams as LinearLayout.LayoutParams).weight = 35f
+		pane.isVisible = true
+		renderFinderPane()
 	}
 
-	private fun setPaneWeights(recyclerWeight: Float, paneWeight: Float) {
-		(viewBinding.recyclerView.layoutParams as LinearLayout.LayoutParams).weight = recyclerWeight
-		(viewBinding.detailPane.layoutParams as LinearLayout.LayoutParams).weight = paneWeight
-		viewBinding.recyclerView.requestLayout()
-		viewBinding.detailPane.requestLayout()
-	}
-
-	private fun renderDetailPane(selectedId: Long?) {
+	/**
+	 * Inflates the "Find similar" sidebar: a compact matched-count line, a manual-search affordance, and a
+	 * [FragmentContainerView][androidx.fragment.app.FragmentContainerView] that hosts a per-row
+	 * [AlternativesFragment]. The toolbar keeps the target-source dropdown and APPLY action, so this pane
+	 * needs neither.
+	 */
+	private fun renderFinderPane() {
 		val pane = viewBinding.detailPane
-		val binding = detailBinding ?: PaneMigrationDetailBinding.inflate(layoutInflater, pane, false).also {
+		val binding = finderBinding ?: PaneMigrationFinderBinding.inflate(layoutInflater, pane, false).also {
 			pane.removeAllViews()
 			pane.addView(it.root)
-			detailBinding = it
+			finderBinding = it
 		}
+		binding.buttonSearch.setOnClickListener { hostedFinderFragment()?.showManualSearch() }
+		updateFinderCount()
+		renderFinderFragment(viewModel.selectedRowId.value)
+	}
+
+	/** Swaps the hosted fragment for the currently-selected row, or shows the "select a manga" hint. */
+	private fun renderFinderFragment(selectedId: Long?) {
+		val binding = finderBinding ?: return
 		val row = selectedId?.let { id -> viewModel.content.value.firstOrNull { it.original.id == id } }
+		binding.buttonSearch.isEnabled = row != null
 		if (row == null) {
-			binding.textViewEmpty.isVisible = true
-			binding.scrollContent.isVisible = false
+			binding.textViewHint.isVisible = true
+			binding.fragmentContainer.isVisible = false
+			removeFinderFragment()
 			return
 		}
-		binding.textViewEmpty.isVisible = false
-		binding.scrollContent.isVisible = true
-		binding.root.alpha = if (row.skipped) 0.6f else 1f
-		bindOriginal(
-			binding.imageViewCoverFrom,
-			binding.textViewTitleFrom,
-			binding.textViewSourceFrom,
-			binding.textViewLatestFrom,
-			row,
-		)
-		bindMatch(
-			binding.imageViewCoverTo,
-			binding.progressTo,
-			binding.textViewTitleTo,
-			binding.textViewSourceTo,
-			binding.textViewLatestTo,
-			binding.cardTo,
-			row.match,
-		)
-		val canMigrate = row.match is MatchState.Matched && !row.skipped
-		binding.buttonMigrate.isEnabled = canMigrate
-		binding.buttonCopy.isEnabled = canMigrate
-		binding.buttonMigrate.setOnClickListener { viewModel.migrateRowNow(row.original.id, copy = false) }
-		binding.buttonCopy.setOnClickListener { viewModel.migrateRowNow(row.original.id, copy = true) }
-		binding.buttonSkip.setText(if (row.skipped) R.string.migrate else R.string.dont_migrate)
-		binding.buttonSkip.setOnClickListener { viewModel.setSkipped(row.original.id, !row.skipped) }
-		binding.buttonSearch.setOnClickListener { onOverride(row.original) }
+		binding.textViewHint.isVisible = false
+		binding.fragmentContainer.isVisible = true
+		supportFragmentManager.beginTransaction()
+			.replace(
+				binding.fragmentContainer.id,
+				AlternativesFragment.newInstance(row.original, viewModel.targetSource.value),
+				FINDER_FRAGMENT_TAG,
+			)
+			.commit()
 	}
 
-	private fun renderSidebar() {
-		val pane = viewBinding.detailPane
-		val binding = sidebarBinding ?: PaneMigrationSidebarBinding.inflate(layoutInflater, pane, false).also {
-			pane.removeAllViews()
-			pane.addView(it.root)
-			sidebarBinding = it
-		}
-		rebuildSidebarDropdown(viewModel.availableSources.value, viewModel.targetSource.value)
-		binding.dropdownSource.setOnItemClickListener { _, _, position, _ -> onSourceSelected(position) }
-		binding.buttonApply.setOnClickListener { showApplyDialog() }
-		binding.buttonCopy.setOnClickListener {
-			if (viewModel.matchedCount.value > 0) {
-				viewModel.apply(copy = true)
-			}
-		}
-		updateSidebarCount()
+	private fun hostedFinderFragment(): AlternativesFragment? =
+		supportFragmentManager.findFragmentByTag(FINDER_FRAGMENT_TAG) as? AlternativesFragment
+
+	private fun removeFinderFragment() {
+		val existing = supportFragmentManager.findFragmentByTag(FINDER_FRAGMENT_TAG) ?: return
+		supportFragmentManager.beginTransaction().remove(existing).commit()
 	}
 
-	private fun rebuildSidebarDropdown(sources: List<MangaSource>, selected: MangaSource?) {
-		val binding = sidebarBinding ?: return
-		val entries = sources.mapTo(ArrayList(sources.size + 1)) { it.getTitle(this) }
-		entries.add(getString(R.string.more_sources))
-		binding.dropdownSource.setAdapter(
-			ArrayAdapter(this, android.R.layout.simple_list_item_1, entries),
-		)
-		if (selected != null) {
-			binding.dropdownSource.setText(selected.getTitle(this), false)
-		}
-	}
-
-	private fun updateSidebarCount() {
-		val binding = sidebarBinding ?: return
+	private fun updateFinderCount() {
+		val binding = finderBinding ?: return
 		binding.textViewCount.text = getString(
 			R.string.migration_matched_count,
 			viewModel.matchedCount.value,
@@ -402,8 +352,14 @@ class MigrationListActivity : BaseActivity<ActivityMigrationListBinding>(), Menu
 		latest: TextView,
 		card: View,
 		match: MatchState,
+		original: Manga,
 	) {
 		val ctx = cover.context
+		// In the tablet sidebar layout a row tap selects the row (opening the finder pane), so the "to"
+		// card must not steal taps there. In the phone plain list, tapping the target opens the "Find
+		// similar" picker so the user can match manually across all sources — even when auto-match found
+		// nothing (NotFound) or picked the wrong title.
+		val manualMatchOnTap = !isSidebarLayout
 		when (match) {
 			is MatchState.Searching -> {
 				cover.setImageAsync(null, null)
@@ -411,7 +367,6 @@ class MigrationListActivity : BaseActivity<ActivityMigrationListBinding>(), Menu
 				title.text = null
 				source.text = null
 				latest.text = null
-				card.isClickable = false
 			}
 
 			is MatchState.NotFound -> {
@@ -420,7 +375,6 @@ class MigrationListActivity : BaseActivity<ActivityMigrationListBinding>(), Menu
 				title.text = null
 				source.text = null
 				latest.text = null
-				card.isClickable = false
 			}
 
 			is MatchState.Matched -> {
@@ -429,24 +383,26 @@ class MigrationListActivity : BaseActivity<ActivityMigrationListBinding>(), Menu
 				title.text = match.manga.title
 				source.text = match.manga.source.getTitle(ctx)
 				latest.text = ctx.getString(R.string.migration_latest_chapter, match.chaptersCount)
-				card.isClickable = true
-				card.setOnClickListener { router.openDetails(match.manga) }
 			}
+		}
+		if (manualMatchOnTap) {
+			// Tap the target (in any state) to manually pick the right match from all sources.
+			card.isClickable = true
+			card.setOnClickListener { onOverride(original) }
+		} else if (match is MatchState.Matched) {
+			card.isClickable = true
+			card.setOnClickListener { router.openDetails(match.manga) }
+		} else {
+			card.isClickable = false
+			card.setOnClickListener(null)
 		}
 	}
 
-	private abstract inner class BaseRowViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-		abstract fun bind(row: MigrationRow)
-	}
-
-	private inner class RowAdapter : RecyclerView.Adapter<BaseRowViewHolder>() {
+	private inner class RowAdapter : RecyclerView.Adapter<DefaultRowViewHolder>() {
 
 		private val items = ArrayList<MigrationRow>()
 
-		/** One of the LAYOUT_* constants; drives [getItemViewType] so the whole list uses one design. */
-		var layoutMode: Int = 0
-
-		/** Highlighted row in the master-detail layout (design 3). */
+		/** Highlighted row in the tablet sidebar layout; null on phones / when nothing is selected. */
 		var selectedId: Long? = null
 			private set
 
@@ -465,159 +421,46 @@ class MigrationListActivity : BaseActivity<ActivityMigrationListBinding>(), Menu
 
 		override fun getItemCount() = items.size
 
-		override fun getItemViewType(position: Int) = layoutMode
+		override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DefaultRowViewHolder =
+			DefaultRowViewHolder(ItemMigrationListBinding.inflate(layoutInflater, parent, false))
 
-		override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BaseRowViewHolder = when (viewType) {
-			LAYOUT_WIDE -> WideRowViewHolder(ItemMigrationListWideBinding.inflate(layoutInflater, parent, false))
-			LAYOUT_CAROUSEL -> CarouselRowViewHolder(
-				ItemMigrationListCarouselBinding.inflate(layoutInflater, parent, false),
-			)
-
-			else -> DefaultRowViewHolder(ItemMigrationListBinding.inflate(layoutInflater, parent, false))
-		}
-
-		override fun onBindViewHolder(holder: BaseRowViewHolder, position: Int) = holder.bind(items[position])
+		override fun onBindViewHolder(holder: DefaultRowViewHolder, position: Int) = holder.bind(items[position])
 	}
 
 	private inner class DefaultRowViewHolder(
 		private val binding: ItemMigrationListBinding,
-	) : BaseRowViewHolder(binding.root) {
-
-		override fun bind(row: MigrationRow) {
-			binding.root.alpha = if (row.skipped) 0.4f else 1f
-			bindOriginal(
-				binding.imageViewCoverFrom,
-				binding.textViewTitleFrom,
-				binding.textViewSourceFrom,
-				binding.textViewLatestFrom,
-				row,
-			)
-			bindMatch(
-				binding.imageViewCoverTo,
-				binding.progressTo,
-				binding.textViewTitleTo,
-				binding.textViewSourceTo,
-				binding.textViewLatestTo,
-				binding.cardTo,
-				row.match,
-			)
-			binding.buttonMenu.setOnClickListener { showRowMenu(it, row) }
-			applyMasterDetailSelection(binding.root, row)
-		}
-	}
-
-	private inner class WideRowViewHolder(
-		private val binding: ItemMigrationListWideBinding,
-	) : BaseRowViewHolder(binding.root) {
-
-		override fun bind(row: MigrationRow) {
-			binding.root.alpha = if (row.skipped) 0.4f else 1f
-			bindOriginal(
-				binding.imageViewCoverFrom,
-				binding.textViewTitleFrom,
-				binding.textViewSourceFrom,
-				binding.textViewLatestFrom,
-				row,
-			)
-			bindMatch(
-				binding.imageViewCoverTo,
-				binding.progressTo,
-				binding.textViewTitleTo,
-				binding.textViewSourceTo,
-				binding.textViewLatestTo,
-				binding.cardTo,
-				row.match,
-			)
-			binding.buttonMenu.setOnClickListener { showRowMenu(it, row) }
-		}
-	}
-
-	private inner class CarouselRowViewHolder(
-		private val binding: ItemMigrationListCarouselBinding,
-	) : BaseRowViewHolder(binding.root) {
-
-		private val candidateAdapter = CandidateAdapter()
-
-		init {
-			binding.recyclerCandidates.adapter = candidateAdapter
-		}
-
-		override fun bind(row: MigrationRow) {
-			binding.root.alpha = if (row.skipped) 0.4f else 1f
-			bindOriginal(
-				binding.imageViewCoverFrom,
-				binding.textViewTitleFrom,
-				binding.textViewSourceFrom,
-				binding.textViewLatestFrom,
-				row,
-			)
-			binding.buttonMenu.setOnClickListener { showRowMenu(it, row) }
-			when (val match = row.match) {
-				is MatchState.Matched -> {
-					binding.textViewStatus.isVisible = false
-					binding.recyclerCandidates.isVisible = true
-					candidateAdapter.submit(row.original.id, match.candidates, match.manga.id)
-				}
-
-				is MatchState.Searching -> {
-					binding.textViewStatus.isVisible = true
-					binding.textViewStatus.setText(R.string.migration_searching)
-					binding.recyclerCandidates.isVisible = false
-					candidateAdapter.submit(row.original.id, emptyList(), null)
-				}
-
-				is MatchState.NotFound -> {
-					binding.textViewStatus.isVisible = true
-					binding.textViewStatus.setText(R.string.migration_no_match)
-					binding.recyclerCandidates.isVisible = false
-					candidateAdapter.submit(row.original.id, emptyList(), null)
-				}
-			}
-		}
-	}
-
-	private inner class CandidateAdapter : RecyclerView.Adapter<CandidateViewHolder>() {
-
-		private val items = ArrayList<Pair<Manga, Int>>()
-		private var originalId = 0L
-		private var selectedMangaId: Long? = null
-
-		fun submit(originalId: Long, candidates: List<Pair<Manga, Int>>, selectedMangaId: Long?) {
-			this.originalId = originalId
-			this.selectedMangaId = selectedMangaId
-			items.clear()
-			items.addAll(candidates)
-			notifyDataSetChanged()
-		}
-
-		override fun getItemCount() = items.size
-
-		override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
-			CandidateViewHolder(ItemMigrationCandidateBinding.inflate(layoutInflater, parent, false))
-
-		override fun onBindViewHolder(holder: CandidateViewHolder, position: Int) {
-			val (manga, chapters) = items[position]
-			holder.bind(originalId, manga, chapters, manga.id == selectedMangaId)
-		}
-	}
-
-	private inner class CandidateViewHolder(
-		private val binding: ItemMigrationCandidateBinding,
 	) : RecyclerView.ViewHolder(binding.root) {
 
-		fun bind(originalId: Long, manga: Manga, chaptersCount: Int, selected: Boolean) {
-			val ctx = binding.root.context
-			binding.imageViewCover.setImageAsync(manga.coverUrl, manga)
-			binding.textViewTitle.text = manga.title
-			binding.textViewLatest.text = ctx.getString(R.string.migration_latest_chapter, chaptersCount)
-			binding.cardCandidate.strokeWidth =
-				if (selected) ctx.resources.getDimensionPixelSize(R.dimen.selection_stroke_width) else 0
-			binding.root.setOnClickListener { viewModel.selectCandidate(originalId, manga) }
+		fun bind(row: MigrationRow) {
+			binding.root.alpha = if (row.skipped) 0.4f else 1f
+			bindOriginal(
+				binding.imageViewCoverFrom,
+				binding.textViewTitleFrom,
+				binding.textViewSourceFrom,
+				binding.textViewLatestFrom,
+				row,
+			)
+			bindMatch(
+				binding.imageViewCoverTo,
+				binding.progressTo,
+				binding.textViewTitleTo,
+				binding.textViewSourceTo,
+				binding.textViewLatestTo,
+				binding.cardTo,
+				row.match,
+				row.original,
+			)
+			binding.buttonMenu.setOnClickListener { showRowMenu(it, row) }
+			applySidebarSelection(binding.root, row)
 		}
 	}
 
-	private fun applyMasterDetailSelection(root: View, row: MigrationRow) {
-		if (adapter.layoutMode == LAYOUT_MASTER_DETAIL) {
+	/**
+	 * In the tablet sidebar layout a row is selectable: tapping it drives [MigrationListViewModel.selectRow]
+	 * and the tapped row is highlighted. On phones the rows are inert (the "to" card handles taps instead).
+	 */
+	private fun applySidebarSelection(root: View, row: MigrationRow) {
+		if (isSidebarLayout) {
 			root.setBackgroundColor(if (adapter.selectedId == row.original.id) selectionColor else Color.TRANSPARENT)
 			root.setOnClickListener { viewModel.selectRow(row.original.id) }
 		} else {
@@ -632,12 +475,8 @@ class MigrationListActivity : BaseActivity<ActivityMigrationListBinding>(), Menu
 		const val EXTRA_IDS = "migration_ids"
 		const val EXTRA_SOURCE = "migration_source"
 
-		// Tablet layout modes; index-aligned with R.array.migration_tablet_layouts / the pref entry values.
-		private const val LAYOUT_GRID = 1
-		private const val LAYOUT_WIDE = 2
-		private const val LAYOUT_MASTER_DETAIL = 3
-		private const val LAYOUT_SIDEBAR = 4
-		private const val LAYOUT_CAROUSEL = 5
+		// Tag for the "Find similar" fragment hosted in the tablet sidebar layout.
+		private const val FINDER_FRAGMENT_TAG = "finder"
 
 		fun newIntent(context: Context, mangaIds: LongArray, sourceName: String?): Intent =
 			Intent(context, MigrationListActivity::class.java)

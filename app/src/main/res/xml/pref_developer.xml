@@ -6,15 +6,6 @@
 
 	<PreferenceCategory android:title="@string/experimental_features">
 
-		<ListPreference
-			android:defaultValue="0"
-			android:entries="@array/migration_tablet_layouts"
-			android:entryValues="@array/values_migration_tablet_layout"
-			android:icon="@drawable/ic_replace"
-			android:key="migration_tablet_layout"
-			android:title="@string/migration_tablet_layout"
-			app:useSimpleSummaryProvider="true" />
-
 		<SwitchPreferenceCompat
 			android:defaultValue="false"
 			android:icon="@drawable/ic_language"

@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content"
+	android:orientation="vertical">
+
+	<org.koitharu.kotatsu.core.ui.sheet.AdaptiveSheetHeaderBar
+		android:id="@+id/headerBar"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		app:title="@string/filter_and_sort" />
+
+	<androidx.core.widget.NestedScrollView
+		android:id="@+id/scrollView"
+		android:layout_width="match_parent"
+		android:layout_height="0dp"
+		android:layout_weight="1"
+		android:clipToPadding="false"
+		android:scrollIndicators="top|bottom"
+		android:scrollbars="vertical">
+
+		<LinearLayout
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:animateLayoutChanges="true"
+			android:orientation="vertical"
+			android:paddingBottom="@dimen/margin_normal">
+
+			<TextView
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginHorizontal="@dimen/margin_normal"
+				android:text="@string/sort_order"
+				android:textAppearance="?textAppearanceTitleSmall" />
+
+			<org.koitharu.kotatsu.core.ui.widgets.ChipsView
+				android:id="@+id/chips_sort"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginHorizontal="@dimen/margin_normal"
+				android:layout_marginTop="@dimen/margin_small"
+				app:chipStyle="@style/Widget.Kotatsu.Chip.Filter"
+				app:selectionRequired="false"
+				app:singleSelection="false" />
+
+			<TextView
+				android:id="@+id/title_flags"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginHorizontal="@dimen/margin_normal"
+				android:layout_marginTop="@dimen/margin_normal"
+				android:text="@string/filter"
+				android:textAppearance="?textAppearanceTitleSmall" />
+
+			<org.koitharu.kotatsu.core.ui.widgets.ChipsView
+				android:id="@+id/chips_flags"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginHorizontal="@dimen/margin_normal"
+				android:layout_marginTop="@dimen/margin_small"
+				app:chipStyle="@style/Widget.Kotatsu.Chip.Filter"
+				app:selectionRequired="false"
+				app:singleSelection="false" />
+
+			<TextView
+				android:id="@+id/title_types"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginHorizontal="@dimen/margin_normal"
+				android:layout_marginTop="@dimen/margin_normal"
+				android:text="@string/content_type"
+				android:textAppearance="?textAppearanceTitleSmall"
+				android:visibility="gone"
+				tools:visibility="visible" />
+
+			<org.koitharu.kotatsu.core.ui.widgets.ChipsView
+				android:id="@+id/chips_types"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginHorizontal="@dimen/margin_normal"
+				android:layout_marginTop="@dimen/margin_small"
+				android:visibility="gone"
+				app:chipStyle="@style/Widget.Kotatsu.Chip.Filter"
+				app:selectionRequired="false"
+				app:singleSelection="false"
+				tools:visibility="visible" />
+
+			<TextView
+				android:id="@+id/title_genres"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginHorizontal="@dimen/margin_normal"
+				android:layout_marginTop="@dimen/margin_normal"
+				android:text="@string/genres"
+				android:textAppearance="?textAppearanceTitleSmall"
+				android:visibility="gone"
+				tools:visibility="visible" />
+
+			<org.koitharu.kotatsu.core.ui.widgets.ChipsView
+				android:id="@+id/chips_genres"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginHorizontal="@dimen/margin_normal"
+				android:layout_marginTop="@dimen/margin_small"
+				android:visibility="gone"
+				app:chipStyle="@style/Widget.Kotatsu.Chip.Filter"
+				app:selectionRequired="false"
+				app:singleSelection="false"
+				tools:visibility="visible" />
+
+			<TextView
+				android:id="@+id/title_sources"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginHorizontal="@dimen/margin_normal"
+				android:layout_marginTop="@dimen/margin_normal"
+				android:text="@string/sources"
+				android:textAppearance="?textAppearanceTitleSmall"
+				android:visibility="gone"
+				tools:visibility="visible" />
+
+			<org.koitharu.kotatsu.core.ui.widgets.ChipsView
+				android:id="@+id/chips_sources"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginHorizontal="@dimen/margin_normal"
+				android:layout_marginTop="@dimen/margin_small"
+				android:visibility="gone"
+				app:chipStyle="@style/Widget.Kotatsu.Chip.Filter"
+				app:selectionRequired="false"
+				app:singleSelection="false"
+				tools:visibility="visible" />
+
+		</LinearLayout>
+	</androidx.core.widget.NestedScrollView>
+
+	<com.google.android.material.dockedtoolbar.DockedToolbarLayout
+		android:id="@+id/docked_toolbar"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:fitsSystemWindows="false">
+
+		<LinearLayout
+			android:id="@+id/layout_bottom"
+			android:layout_width="match_parent"
+			android:layout_height="@dimen/m3_comp_toolbar_docked_container_height"
+			android:gravity="center_vertical">
+
+			<com.google.android.material.button.MaterialButton
+				android:id="@+id/button_reset"
+				style="?materialButtonOutlinedStyle"
+				android:layout_width="0dp"
+				android:layout_height="wrap_content"
+				android:layout_marginEnd="@dimen/margin_small"
+				android:layout_weight="1"
+				android:text="@string/reset" />
+
+			<com.google.android.material.button.MaterialButton
+				android:id="@+id/button_done"
+				style="?materialButtonTonalStyle"
+				android:layout_width="0dp"
+				android:layout_height="wrap_content"
+				android:layout_marginStart="@dimen/margin_small"
+				android:layout_weight="1"
+				android:text="@string/done" />
+
+		</LinearLayout>
+	</com.google.android.material.dockedtoolbar.DockedToolbarLayout>
+
+</LinearLayout>

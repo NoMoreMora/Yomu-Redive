@@ -6,7 +6,7 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import androidx.appcompat.view.ActionMode
-import androidx.appcompat.widget.PopupMenu
+import androidx.core.view.MenuProvider
 import androidx.fragment.app.viewModels
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
@@ -14,14 +14,13 @@ import org.koitharu.kotatsu.R
 import org.koitharu.kotatsu.core.nav.AppRouter
 import org.koitharu.kotatsu.core.nav.router
 import org.koitharu.kotatsu.core.ui.list.ListSelectionController
-import org.koitharu.kotatsu.core.util.ext.sortedByOrdinal
+import org.koitharu.kotatsu.core.util.ext.addMenuProvider
 import org.koitharu.kotatsu.core.util.ext.withArgs
 import org.koitharu.kotatsu.databinding.FragmentListBinding
-import org.koitharu.kotatsu.list.domain.ListSortOrder
 import org.koitharu.kotatsu.list.ui.MangaListFragment
 
 @AndroidEntryPoint
-class FavouritesListFragment : MangaListFragment(), PopupMenu.OnMenuItemClickListener {
+class FavouritesListFragment : MangaListFragment() {
 
 	override val viewModel by viewModels<FavouritesListViewModel>()
 
@@ -33,6 +32,7 @@ class FavouritesListFragment : MangaListFragment(), PopupMenu.OnMenuItemClickLis
 	override fun onViewBindingCreated(binding: FragmentListBinding, savedInstanceState: Bundle?) {
 		super.onViewBindingCreated(binding, savedInstanceState)
 		binding.recyclerView.isVP2BugWorkaroundEnabled = true
+		addMenuProvider(FilterSortMenuProvider())
 	}
 
 	override fun onScrolledToEnd() = viewModel.requestMoreItems()
@@ -40,19 +40,7 @@ class FavouritesListFragment : MangaListFragment(), PopupMenu.OnMenuItemClickLis
 	override fun onEmptyActionClick() = viewModel.clearFilter()
 
 	override fun onFilterClick(view: View?) {
-		val menu = PopupMenu(view?.context ?: return, view)
-		menu.setOnMenuItemClickListener(this)
-		val orders = ListSortOrder.FAVORITES.sortedByOrdinal()
-		for ((i, item) in orders.withIndex()) {
-			menu.menu.add(Menu.NONE, Menu.NONE, i, item.titleResId)
-		}
-		menu.show()
-	}
-
-	override fun onMenuItemClick(item: MenuItem): Boolean {
-		val order = ListSortOrder.FAVORITES.sortedByOrdinal().getOrNull(item.order) ?: return false
-		viewModel.setSortOrder(order)
-		return true
+		router.showFavoritesFilterSheet(categoryId)
 	}
 
 	override fun onCreateActionMode(
@@ -109,6 +97,22 @@ class FavouritesListFragment : MangaListFragment(), PopupMenu.OnMenuItemClickLis
 			}
 
 			else -> super.onActionItemClicked(controller, mode, item)
+		}
+	}
+
+	private inner class FilterSortMenuProvider : MenuProvider {
+
+		override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+			menuInflater.inflate(R.menu.opt_favourites_list, menu)
+		}
+
+		override fun onMenuItemSelected(menuItem: MenuItem): Boolean = when (menuItem.itemId) {
+			R.id.action_filter -> {
+				router.showFavoritesFilterSheet(categoryId)
+				true
+			}
+
+			else -> false
 		}
 	}
 

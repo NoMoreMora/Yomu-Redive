@@ -38,16 +38,7 @@ sealed interface MatchState {
 	data object Searching : MatchState
 	data object NotFound : MatchState
 
-	/**
-	 * A resolved match. [manga]/[chaptersCount] are the currently-selected candidate (so `apply()`,
-	 * `matchedCount`, `migrateRowNow` and the default row rendering keep working); [candidates] is the
-	 * full best-first list of alternatives shown by the candidate-carousel layout (design 5).
-	 */
-	data class Matched(
-		val manga: Manga,
-		val chaptersCount: Int,
-		val candidates: List<Pair<Manga, Int>> = emptyList(),
-	) : MatchState
+	data class Matched(val manga: Manga, val chaptersCount: Int) : MatchState
 }
 
 data class MigrationRow(
@@ -85,11 +76,7 @@ class MigrationListViewModel @Inject constructor(
 	val targetSource = MutableStateFlow<MangaSource?>(null)
 	val availableSources = MutableStateFlow<List<MangaSource>>(emptyList())
 
-	/** Selected layout for the tablet Migration view (Developer options); 0 = default. */
-	val tabletLayout: Int
-		get() = settings.migrationTabletLayout
-
-	/** Row selected in the master-detail layout (design 3); null when nothing is selected yet. */
+	/** Row selected in the tablet sidebar layout; null when nothing is selected yet. */
 	val selectedRowId = MutableStateFlow<Long?>(null)
 
 	val content: StateFlow<List<MigrationRow>> = combine(rows, options) { list, opts ->
@@ -174,30 +161,12 @@ class MigrationListViewModel @Inject constructor(
 	}
 
 	fun setMatch(originalId: Long, match: Manga) {
-		val chapters = match.chaptersCount()
-		updateRow(originalId, MatchState.Matched(match, chapters, candidates = listOf(match to chapters)))
+		updateRow(originalId, MatchState.Matched(match, match.chaptersCount()))
 	}
 
-	/** Marks a row as selected in the master-detail layout (design 3). */
+	/** Marks a row as selected in the tablet sidebar layout. */
 	fun selectRow(originalId: Long) {
 		selectedRowId.value = originalId
-	}
-
-	/**
-	 * Candidate carousel (design 5): rewrites the row's currently-selected candidate to [manga],
-	 * preserving the full candidate list so the carousel keeps showing every option.
-	 */
-	@Synchronized
-	fun selectCandidate(originalId: Long, manga: Manga) {
-		rows.value = rows.value.map { row ->
-			val m = row.match
-			if (row.original.id == originalId && m is MatchState.Matched) {
-				val picked = m.candidates.firstOrNull { it.first.id == manga.id } ?: return@map row
-				row.copy(match = m.copy(manga = picked.first, chaptersCount = picked.second))
-			} else {
-				row
-			}
-		}
 	}
 
 	fun setSkipped(originalId: Long, skipped: Boolean) {
@@ -291,21 +260,17 @@ class MigrationListViewModel @Inject constructor(
 		if (hits.isEmpty()) {
 			return null
 		}
-		// Resolving details is a network getDetails call per candidate, so only fan out when we actually
-		// need several: matching by chapter count (which always scanned the top N to pick the largest),
-		// or the candidate-carousel layout (design 5). Otherwise resolve just the first hit as before, so
-		// ordinary migrations keep their original single-request cost.
-		val wantCandidates = key.byChapters || tabletLayout == LAYOUT_CANDIDATE_CAROUSEL
-		if (!wantCandidates) {
-			val details = withDetails(hits.first())
-			val chapters = details.chaptersCount()
-			return MatchState.Matched(details, chapters, candidates = listOf(details to chapters))
+		// Resolving details is a network getDetails call per candidate. Matching by chapter count needs to
+		// scan the top N and pick the largest; otherwise resolve just the first hit so ordinary migrations
+		// keep their original single-request cost.
+		if (key.byChapters) {
+			val best = hits.take(CANDIDATE_LIMIT)
+				.map { val details = withDetails(it); details to details.chaptersCount() }
+				.maxByOrNull { it.second } ?: return null
+			return MatchState.Matched(best.first, best.second)
 		}
-		val candidates = hits.take(CANDIDATE_LIMIT)
-			.map { val details = withDetails(it); details to details.chaptersCount() }
-			.let { pairs -> if (key.byChapters) pairs.sortedByDescending { it.second } else pairs }
-		val best = candidates.firstOrNull() ?: return null
-		return MatchState.Matched(best.first, best.second, candidates)
+		val details = withDetails(hits.first())
+		return MatchState.Matched(details, details.chaptersCount())
 	}
 
 	private suspend fun withDetails(manga: Manga): Manga = runCatchingCancellable {
@@ -364,13 +329,10 @@ class MigrationListViewModel @Inject constructor(
 	)
 
 	private companion object {
-		// Max hits to resolve details for and keep as selectable candidates (design 5). Each resolve is a
-		// network getDetails call, so this stays low; it also bounds the "match by chapter count" scan.
+		// Max hits to resolve details for when matching by chapter count. Each resolve is a network
+		// getDetails call, so this stays low; it bounds the "match by chapter count" scan.
 		private const val CANDIDATE_LIMIT = 5
 		private const val TOP_SOURCES_LIMIT = 10
-		// Migration-view mode that shows the candidate carousel; must match the layout mapping in
-		// MigrationListActivity / the migration_tablet_layout entry-values.
-		private const val LAYOUT_CANDIDATE_CAROUSEL = 5
 		private val WORD_SEPARATORS = Regex("[^\\p{L}\\p{N}]+")
 	}
 }
