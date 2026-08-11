@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.core.text.bold
 import androidx.core.text.buildSpannedString
 import org.koitharu.kotatsu.core.model.getTitle
+import org.koitharu.kotatsu.core.model.isBroken
 import org.koitharu.kotatsu.core.model.withOverride
 import org.koitharu.kotatsu.core.ui.model.MangaOverride
 import org.koitharu.kotatsu.list.ui.ListModelDiffCallback.Companion.PAYLOAD_ANYTHING_CHANGED
@@ -19,6 +20,17 @@ sealed class MangaListModel : ListModel {
 
 	val id: Long
 		get() = manga.id
+
+	/**
+	 * Identity used for list diffing. Defaults to [id] (the manga id). The History tab overrides this
+	 * per row so the same manga can appear under several day headers without DiffUtil collapsing them.
+	 */
+	open val listId: Long
+		get() = id
+
+	/** A broken/unsupported source (e.g. imported manga with no matching source) — shown as a "Broken" tag. */
+	val isBroken: Boolean
+		get() = manga.isBroken
 
 	val title: String
 		get() = override?.title.ifNullOrEmpty { manga.title }
@@ -44,7 +56,7 @@ sealed class MangaListModel : ListModel {
 	}
 
 	override fun areItemsTheSame(other: ListModel): Boolean {
-		return other is MangaListModel && other.javaClass == javaClass && id == other.id
+		return other is MangaListModel && other.javaClass == javaClass && listId == other.listId
 	}
 
 	override fun getChangePayload(previousState: ListModel): Any? = when {

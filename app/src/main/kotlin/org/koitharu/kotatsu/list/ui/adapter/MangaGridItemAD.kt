@@ -85,6 +85,7 @@ fun mangaGridItemAD(
 		binding.imageViewCover.setImageAsync(item.coverUrl, item.manga)
 		binding.badge.number = item.counter
 		binding.badge.isVisible = item.counter > 0
+		binding.textViewBroken.isVisible = item.isBroken
 	}
 }
 

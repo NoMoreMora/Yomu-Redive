@@ -657,6 +657,7 @@
     <string name="migration_completed">Migration completed</string>
     <string name="migration_migrate_to">Migrate to</string>
     <string name="migration_latest_chapter">Latest: %d</string>
+    <string name="migration_read_chapter">Read: %1$d / %2$d</string>
     <string name="more_sources">More sources…</string>
     <string name="migrate_now">Migrate now</string>
     <string name="copy_now">Copy now</string>
@@ -771,6 +772,9 @@
     <string name="captcha_notifications_summary">Notify when a source needs a CAPTCHA solved. Off by default — the prompt still appears when you open or read such a source; only background/passive notifications are suppressed.</string>
     <string name="reader_resume_fix">Webtoon resume fix</string>
     <string name="reader_resume_fix_summary">Resume webtoon chapters from the top of the screen instead of the bottom, so returning to a chapter no longer skips ahead a screenful (helps on large/foldable displays)</string>
+    <string name="show_check_mark_badge">Show completed check mark</string>
+    <string name="show_check_mark_badge_summary">Show a check mark on covers of manga you\'ve finished. Turn off to keep only the unread-chapter count.</string>
+    <string name="broken">Broken</string>
     <string name="debug_logging">Debug logging</string>
     <string name="debug_logging_summary">Record diagnostic logs in the app. Turn on, reproduce the issue, then export the log.</string>
     <string name="export_log">Export debug log</string>

@@ -8,4 +8,9 @@ data class MangaCompactListModel(
 	override val override: MangaOverride?,
 	val subtitle: String,
 	override val counter: Int,
-) : MangaListModel()
+	val differentiator: Long = 0L,
+) : MangaListModel() {
+
+	override val listId: Long
+		get() = if (differentiator != 0L) differentiator else id
+}

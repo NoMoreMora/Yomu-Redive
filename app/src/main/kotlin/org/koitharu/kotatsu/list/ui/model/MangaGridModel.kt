@@ -14,7 +14,11 @@ data class MangaGridModel(
 	val isFavorite: Boolean,
 	val isSaved: Boolean,
 	val isPinned: Boolean = false,
+	val differentiator: Long = 0L,
 ) : MangaListModel() {
+
+	override val listId: Long
+		get() = if (differentiator != 0L) differentiator else id
 
 	override fun getChangePayload(previousState: ListModel): Any? = when {
 		previousState !is MangaGridModel || previousState.manga != manga -> null

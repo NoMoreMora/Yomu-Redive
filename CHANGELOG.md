@@ -5,6 +5,42 @@ fork of [Kotatsu-Redo](https://github.com/Kotatsu-Redo/Kotatsu-Redo). Releases u
 `major.minor.patch` numbers continuing the upstream line the fork forked from, so the in-app
 GitHub-releases updater treats each one as a normal upgrade.
 
+## [9.8.4-beta2] - 2026-08-11
+
+Development (pre-release) build for the in-app **Development** update channel.
+
+### Added
+
+- **"Broken" tag** on manga whose source is unavailable/unsupported (e.g. imported from a Tachiyomi
+  backup). It shows on the cover in the library and history lists so broken entries are easy to spot
+  and resolve with Migration.
+- **Per-day reading history**: re-reading a manga on a later day now adds a new dated entry in the
+  History tab instead of moving the single entry and erasing the earlier day, so you can recall what
+  you read on a given day. Resume, cover progress, backup and sync are unchanged (new `history_log`
+  table, DB v29).
+- **Reading progress in Tachiyomi imports** (Backup & Restore Revamp, part 2): importing a
+  `.tachibk` backup now carries your last-read chapter for each manga. Because imported entries have
+  no real source yet, the position is stored as how far through the series you had read and restored
+  onto the matched source when you migrate — so migrated manga resume where you left off instead of
+  showing nothing read.
+- **"Show completed check mark"** experimental toggle (Settings → Developer options → Experimental
+  features, on by default). Turn it off to hide the check mark on finished manga so covers show only
+  the unread-chapter count.
+
+### Changed
+
+- The favourite (heart) badge on covers no longer appears on the **Updated** and **Feed** tabs; it
+  still shows while browsing a source and in the History tab.
+- **Migration screen** on tablets/large screens: the two comparison cards no longer stretch to half
+  the display — covers are capped to a phone-sized width and sit either side of the arrow.
+- **Migration screen** now shows the last-read chapter (e.g. `Read: 34 / 94`) for a broken/imported
+  entry instead of `Latest: 0`, since such entries have no chapter list of their own.
+
+### Fixed
+
+- Migrating a manga now keeps it in the **History** tab (the per-day log is updated alongside the
+  single-row history), and clears the old entry's leftover day rows.
+
 ## [9.8.4-beta1] - 2026-08-10
 
 Development (pre-release) build for the in-app **Development** update channel.

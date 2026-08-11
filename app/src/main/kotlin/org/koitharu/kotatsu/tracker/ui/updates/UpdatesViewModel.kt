@@ -119,7 +119,7 @@ class UpdatesViewModel @Inject constructor(
 					prevHeader = header
 				}
 			}
-			result += mangaListMapper.toListModel(item.manga, mode)
+			result += mangaListMapper.toListModel(item.manga, mode, MangaListMapper.NO_FAVORITE)
 		}
 		return result
 	}

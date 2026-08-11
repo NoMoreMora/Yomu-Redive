@@ -154,7 +154,7 @@ class HistoryListViewModel @Inject constructor(
 		limit,
 	) { order, filters, limit ->
 		isPaginationReady.set(false)
-		repository.observeAllWithHistory(order, filters, limit)
+		repository.observeHistoryLog(order, filters, limit)
 	}.flattenLatest()
 
 	private suspend fun mapList(
@@ -184,7 +184,9 @@ class HistoryListViewModel @Inject constructor(
 		val order = sortOrder.value
 		var prevHeader: ListHeader? = null
 		var isEmpty = true
-		for ((manga, history) in list) {
+		for (item in list) {
+			val manga = item.manga
+			val history = item.history
 			isEmpty = false
 			if (grouped) {
 				val header = history.header(order)
@@ -195,7 +197,8 @@ class HistoryListViewModel @Inject constructor(
 					prevHeader = header
 				}
 			}
-			result += mangaListMapper.toListModel(manga, mode)
+			// Pass the per-day log id so the same manga can appear under multiple day headers.
+			result += mangaListMapper.toListModel(manga, mode, differentiator = item.id)
 		}
 		if (filters.isNotEmpty() && isEmpty) {
 			result += getEmptyState(hasFilters = true)

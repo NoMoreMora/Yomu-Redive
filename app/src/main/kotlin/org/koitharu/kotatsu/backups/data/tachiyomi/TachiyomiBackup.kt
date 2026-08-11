@@ -25,8 +25,35 @@ class TachiyomiBackupManga(
 	@ProtoNumber(7) val genre: List<String> = emptyList(),
 	@ProtoNumber(8) val status: Int = 0,
 	@ProtoNumber(9) val thumbnailUrl: String? = null,
+	@ProtoNumber(13) val dateAdded: Long = 0L,
+	@ProtoNumber(16) val chapters: List<TachiyomiBackupChapter> = emptyList(),
 	// Category references — each value is a TachiyomiBackupCategory.order.
 	@ProtoNumber(17) val categories: List<Long> = emptyList(),
+	// Per-chapter read timestamps (field 104 in the SY/Mihon schema). Sparse — most read state
+	// lives in the chapters' `read` flags instead; used only to date the imported progress.
+	@ProtoNumber(104) val history: List<TachiyomiBackupHistory> = emptyList(),
+)
+
+/**
+ * A single chapter inside a [TachiyomiBackupManga]. Only the fields needed to reconstruct the
+ * last-read position are decoded: [read] marks a finished chapter, [lastPageRead] catches an
+ * in-progress one, and [sourceOrder] gives the canonical reading order (0 = newest chapter).
+ */
+@Serializable
+class TachiyomiBackupChapter(
+	@ProtoNumber(1) val url: String = "",
+	@ProtoNumber(2) val name: String = "",
+	@ProtoNumber(4) val read: Boolean = false,
+	@ProtoNumber(6) val lastPageRead: Long = 0L,
+	@ProtoNumber(9) val chapterNumber: Float = 0f,
+	@ProtoNumber(10) val sourceOrder: Long = 0L,
+)
+
+@Serializable
+class TachiyomiBackupHistory(
+	// The read chapter's url.
+	@ProtoNumber(1) val url: String = "",
+	@ProtoNumber(2) val lastRead: Long = 0L,
 )
 
 @Serializable

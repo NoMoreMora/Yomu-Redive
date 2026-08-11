@@ -12,6 +12,7 @@ import org.koitharu.kotatsu.core.util.CompositeResult
 import org.koitharu.kotatsu.core.util.progress.Progress
 import org.koitharu.kotatsu.favourites.data.FavouriteCategoryEntity
 import org.koitharu.kotatsu.favourites.data.FavouriteEntity
+import org.koitharu.kotatsu.history.data.HistoryEntity
 import org.koitharu.kotatsu.list.domain.ListSortOrder
 import org.koitharu.kotatsu.parsers.model.MangaState
 import org.koitharu.kotatsu.parsers.util.longHashCode
@@ -25,7 +26,9 @@ import javax.inject.Inject
  * switching platforms: every manga is imported even when its source doesn't exist here — it is
  * stored under [UnknownMangaSource] so it reads as [org.koitharu.kotatsu.core.model.isBroken] and
  * can be resolved with the existing Migration tools. Categories are recreated; manga without a
- * category go into a fallback "Imported" category. Reading progress is not imported (part 1).
+ * category go into a fallback "Imported" category. The last-read position is imported as a fraction
+ * of the series (the broken manga has no real chapters to point at); Migration restores it onto the
+ * matched source via [org.koitharu.kotatsu.alternatives.domain.MigrateUseCase].
  */
 @Reusable
 class TachiyomiBackupImporter @Inject constructor(
@@ -135,6 +138,44 @@ class TachiyomiBackupImporter @Inject constructor(
 				),
 			)
 		}
+		// Reading progress: the imported manga is broken and has no real chapters, so we store how far
+		// through the series the user had read as a percent. Migration maps that fraction back onto the
+		// matched source's chapter list (see MigrateUseCase.makeNewHistory).
+		buildImportedHistory(manga, mangaId)?.let { getHistoryDao().upsert(it) }
+	}
+
+	/**
+	 * Reconstructs a [HistoryEntity] from a Tachiyomi manga's per-chapter read-state, or `null` when
+	 * there is nothing read. Progress is expressed as `readingPosition / totalChapters` so it stays
+	 * source-agnostic.
+	 */
+	private fun buildImportedHistory(manga: TachiyomiBackupManga, mangaId: Long): HistoryEntity? {
+		val total = manga.chapters.size
+		if (total == 0) {
+			return null
+		}
+		// A chapter is "reached" once it is finished (read) or opened (has a saved page).
+		val reached = manga.chapters.filter { it.read || it.lastPageRead > 0L }
+		// sourceOrder is the source's own ordering with 0 = newest, so the furthest-read chapter is the
+		// reached one with the lowest sourceOrder; its 1-based reading position counts every chapter
+		// from the oldest up to and including it.
+		val furthest = reached.minByOrNull { it.sourceOrder } ?: return null
+		val position = manga.chapters.count { it.sourceOrder >= furthest.sourceOrder }
+		val percent = (position.toFloat() / total).coerceIn(0f, 1f)
+		val timestamp = manga.history.maxOfOrNull { it.lastRead }?.takeIf { it > 0L }
+			?: manga.dateAdded.takeIf { it > 0L }
+			?: System.currentTimeMillis()
+		return HistoryEntity(
+			mangaId = mangaId,
+			createdAt = timestamp,
+			updatedAt = timestamp,
+			chapterId = 0L,
+			page = if (furthest.read) 0 else furthest.lastPageRead.toInt(),
+			scroll = 0f,
+			percent = percent,
+			chaptersCount = total,
+			deletedAt = 0L,
+		)
 	}
 
 	private fun Int.toMangaState(): MangaState? = when (this) {

@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView
 import dagger.hilt.android.AndroidEntryPoint
 import org.koitharu.kotatsu.R
 import org.koitharu.kotatsu.core.model.getTitle
+import org.koitharu.kotatsu.core.model.isBroken
 import org.koitharu.kotatsu.core.model.parcelable.ParcelableManga
 import org.koitharu.kotatsu.core.nav.AppRouter
 import org.koitharu.kotatsu.core.nav.router
@@ -221,7 +222,13 @@ class MigrationListActivity : BaseActivity<ActivityMigrationListBinding>(), Menu
 			binding.imageViewCoverFrom.setImageAsync(row.original.coverUrl, row.original)
 			binding.textViewTitleFrom.text = row.original.title
 			binding.textViewSourceFrom.text = row.original.source.getTitle(ctx)
-			binding.textViewLatestFrom.text = ctx.getString(R.string.migration_latest_chapter, row.originalChaptersCount)
+			// Broken (e.g. Tachiyomi-imported) manga have no chapter list, so "Latest" would read 0;
+			// show the last-read chapter instead so there is a position to migrate from.
+			binding.textViewLatestFrom.text = if (row.original.isBroken && row.readChapter > 0) {
+				ctx.getString(R.string.migration_read_chapter, row.readChapter, row.readTotal)
+			} else {
+				ctx.getString(R.string.migration_latest_chapter, row.originalChaptersCount)
+			}
 
 			when (val match = row.match) {
 				is MatchState.Searching -> {

@@ -28,8 +28,10 @@
 			android:scaleType="centerCrop"
 			app:layout_constraintDimensionRatio="13:18"
 			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintHorizontal_bias="1.0"
 			app:layout_constraintStart_toStartOf="parent"
 			app:layout_constraintTop_toTopOf="parent"
+			app:layout_constraintWidth_max="@dimen/migration_cover_max_width"
 			app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Kotatsu.Cover"
 			tools:src="@tools:sample/backgrounds/scenic" />
 
@@ -41,8 +43,8 @@
 			android:ellipsize="end"
 			android:maxLines="2"
 			android:textAppearance="?attr/textAppearanceTitleSmall"
-			app:layout_constraintEnd_toEndOf="parent"
-			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintEnd_toEndOf="@id/imageView_cover_from"
+			app:layout_constraintStart_toStartOf="@id/imageView_cover_from"
 			app:layout_constraintTop_toBottomOf="@id/imageView_cover_from"
 			tools:text="Original manga title" />
 
@@ -54,8 +56,8 @@
 			android:maxLines="1"
 			android:textAppearance="?attr/textAppearanceBodySmall"
 			android:textColor="?android:attr/textColorSecondary"
-			app:layout_constraintEnd_toEndOf="parent"
-			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintEnd_toEndOf="@id/imageView_cover_from"
+			app:layout_constraintStart_toStartOf="@id/imageView_cover_from"
 			app:layout_constraintTop_toBottomOf="@id/textView_title_from"
 			tools:text="Source A" />
 
@@ -67,8 +69,8 @@
 			android:maxLines="1"
 			android:textAppearance="?attr/textAppearanceBodySmall"
 			android:textColor="?android:attr/textColorSecondary"
-			app:layout_constraintEnd_toEndOf="parent"
-			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintEnd_toEndOf="@id/imageView_cover_from"
+			app:layout_constraintStart_toStartOf="@id/imageView_cover_from"
 			app:layout_constraintTop_toBottomOf="@id/textView_source_from"
 			tools:text="Latest: 71" />
 
@@ -101,8 +103,10 @@
 			android:scaleType="centerCrop"
 			app:layout_constraintDimensionRatio="13:18"
 			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintHorizontal_bias="0.0"
 			app:layout_constraintStart_toStartOf="parent"
 			app:layout_constraintTop_toTopOf="parent"
+			app:layout_constraintWidth_max="@dimen/migration_cover_max_width"
 			app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Kotatsu.Cover"
 			tools:src="@tools:sample/backgrounds/scenic" />
 
@@ -126,8 +130,8 @@
 			android:ellipsize="end"
 			android:maxLines="2"
 			android:textAppearance="?attr/textAppearanceTitleSmall"
-			app:layout_constraintEnd_toEndOf="parent"
-			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintEnd_toEndOf="@id/imageView_cover_to"
+			app:layout_constraintStart_toStartOf="@id/imageView_cover_to"
 			app:layout_constraintTop_toBottomOf="@id/imageView_cover_to"
 			tools:text="Matched manga title" />
 
@@ -139,8 +143,8 @@
 			android:maxLines="1"
 			android:textAppearance="?attr/textAppearanceBodySmall"
 			android:textColor="?android:attr/textColorSecondary"
-			app:layout_constraintEnd_toEndOf="parent"
-			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintEnd_toEndOf="@id/imageView_cover_to"
+			app:layout_constraintStart_toStartOf="@id/imageView_cover_to"
 			app:layout_constraintTop_toBottomOf="@id/textView_title_to"
 			tools:text="Source B" />
 
@@ -152,8 +156,8 @@
 			android:maxLines="1"
 			android:textAppearance="?attr/textAppearanceBodySmall"
 			android:textColor="?android:attr/textColorSecondary"
-			app:layout_constraintEnd_toEndOf="parent"
-			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintEnd_toEndOf="@id/imageView_cover_to"
+			app:layout_constraintStart_toStartOf="@id/imageView_cover_to"
 			app:layout_constraintTop_toBottomOf="@id/textView_source_to"
 			tools:text="Latest: 214" />
 

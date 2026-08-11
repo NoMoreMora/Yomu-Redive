@@ -9,6 +9,7 @@ import org.koitharu.kotatsu.core.ui.model.MangaOverride
 import org.koitharu.kotatsu.core.util.ext.printStackTraceDebug
 import org.koitharu.kotatsu.details.domain.ProgressUpdateUseCase
 import org.koitharu.kotatsu.history.data.HistoryEntity
+import org.koitharu.kotatsu.history.data.HistoryLogEntity
 import org.koitharu.kotatsu.history.data.toMangaHistory
 import org.koitharu.kotatsu.list.domain.ReadingProgress.Companion.PROGRESS_NONE
 import org.koitharu.kotatsu.local.domain.DeleteLocalMangaUseCase
@@ -18,6 +19,8 @@ import org.koitharu.kotatsu.parsers.util.runCatchingCancellable
 import org.koitharu.kotatsu.scrobbling.common.domain.Scrobbler
 import org.koitharu.kotatsu.scrobbling.common.domain.model.ScrobblingStatus
 import org.koitharu.kotatsu.tracker.data.TrackEntity
+import java.time.Instant
+import java.time.ZoneId
 import javax.inject.Inject
 
 class MigrateUseCase
@@ -73,14 +76,19 @@ constructor(
 			}
 			// replace history / reading progress (the "Chapters" data option)
 			val historyDao = database.getHistoryDao()
+			val historyLogDao = database.getHistoryLogDao()
 			val oldHistory = if (options.migrateChapters) historyDao.find(oldDetails.id) else null
 			val newHistory =
 				if (oldHistory != null) {
 					val newHistory = makeNewHistory(oldDetails, newDetails, oldHistory)
 					if (!copy) {
 						historyDao.delete(oldDetails.id)
+						historyLogDao.delete(oldDetails.id)
 					}
 					historyDao.upsert(newHistory)
+					// Keep the per-day History tab (history_log) in step with the single-row history the
+					// reader writes; without this the migrated manga would vanish from the History tab.
+					seedHistoryLog(newHistory)
 					newHistory
 				} else {
 					null
@@ -161,6 +169,47 @@ constructor(
 				it.printStackTraceDebug()
 			}
 		}
+	}
+
+	/**
+	 * Mirrors [history] into the per-day `history_log`, reusing today's row when one already exists so
+	 * a same-day migration collapses to a single entry (matching HistoryRepository.appendHistoryLog).
+	 */
+	private suspend fun seedHistoryLog(history: HistoryEntity) {
+		val dao = database.getHistoryLogDao()
+		val last = dao.findLast(history.mangaId)
+		if (last != null && isSameLocalDay(last.createdAt, history.updatedAt)) {
+			dao.updateProgress(
+				id = last.id,
+				page = history.page,
+				chapterId = history.chapterId,
+				scroll = history.scroll,
+				percent = history.percent,
+				chapters = history.chaptersCount,
+				updatedAt = history.updatedAt,
+			)
+		} else {
+			dao.insert(
+				HistoryLogEntity(
+					id = 0L,
+					mangaId = history.mangaId,
+					createdAt = history.createdAt,
+					updatedAt = history.updatedAt,
+					chapterId = history.chapterId,
+					page = history.page,
+					scroll = history.scroll,
+					percent = history.percent,
+					deletedAt = 0L,
+					chaptersCount = history.chaptersCount,
+				),
+			)
+		}
+	}
+
+	private fun isSameLocalDay(a: Long, b: Long): Boolean {
+		val zone = ZoneId.systemDefault()
+		return Instant.ofEpochMilli(a).atZone(zone).toLocalDate() ==
+			Instant.ofEpochMilli(b).atZone(zone).toLocalDate()
 	}
 
 	private fun makeNewHistory(

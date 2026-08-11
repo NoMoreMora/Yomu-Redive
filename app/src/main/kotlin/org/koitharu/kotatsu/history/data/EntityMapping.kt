@@ -12,3 +12,13 @@ fun HistoryEntity.toMangaHistory() = MangaHistory(
 	percent = percent,
 	chaptersCount = chaptersCount,
 )
+
+fun HistoryLogEntity.toMangaHistory() = MangaHistory(
+	createdAt = Instant.ofEpochMilli(createdAt),
+	updatedAt = Instant.ofEpochMilli(updatedAt),
+	chapterId = chapterId,
+	page = page,
+	scroll = scroll.toInt(),
+	percent = percent,
+	chaptersCount = chaptersCount,
+)

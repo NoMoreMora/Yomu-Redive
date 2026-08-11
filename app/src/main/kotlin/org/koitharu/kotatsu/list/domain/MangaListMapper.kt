@@ -69,11 +69,13 @@ class MangaListMapper @Inject constructor(
 		manga: Manga,
 		mode: ListMode,
 		@Flags flags: Int = DEFAULTS,
+		differentiator: Long = 0L,
 	): MangaListModel = toListModelImpl(
 		manga = manga,
 		mode = mode,
 		options = getOptions(flags),
 		override = dataRepository.getOverride(manga.id),
+		differentiator = differentiator,
 	)
 
 	suspend fun toFeedItem(logItem: TrackingLogItem) = FeedItem(
@@ -96,11 +98,13 @@ class MangaListMapper @Inject constructor(
 		manga: Manga,
 		@Options options: Int,
 		override: MangaOverride?,
+		differentiator: Long = 0L,
 	) = MangaCompactListModel(
 		manga = manga,
 		override = override,
 		subtitle = manga.tags.joinToString(", ") { it.title },
 		counter = getCounter(manga.id, options),
+		differentiator = differentiator,
 	)
 
 	private suspend fun toDetailedListModel(
@@ -108,6 +112,7 @@ class MangaListMapper @Inject constructor(
 		@Options options: Int,
 		override: MangaOverride?,
 		isPinned: Boolean = false,
+		differentiator: Long = 0L,
 	) = MangaDetailedListModel(
 		subtitle = manga.altTitles.firstOrNull(),
 		manga = manga,
@@ -118,6 +123,7 @@ class MangaListMapper @Inject constructor(
 		isSaved = isSaved(manga.id, options),
 		tags = mapTags(manga.tags),
 		isPinned = isPinned,
+		differentiator = differentiator,
 	)
 
 	private suspend fun toGridModel(
@@ -125,6 +131,7 @@ class MangaListMapper @Inject constructor(
 		@Options options: Int,
 		override: MangaOverride?,
 		isPinned: Boolean = false,
+		differentiator: Long = 0L,
 	) = MangaGridModel(
 		manga = manga,
 		override = override,
@@ -133,6 +140,7 @@ class MangaListMapper @Inject constructor(
 		isFavorite = isFavorite(manga.id, options),
 		isSaved = isSaved(manga.id, options),
 		isPinned = isPinned,
+		differentiator = differentiator,
 	)
 
 	private suspend fun toListModelImpl(
@@ -141,10 +149,11 @@ class MangaListMapper @Inject constructor(
 		@Options options: Int,
 		override: MangaOverride?,
 		isPinned: Boolean = false,
+		differentiator: Long = 0L,
 	): MangaListModel = when (mode) {
-		ListMode.LIST -> toCompactListModel(manga, options, override)
-		ListMode.DETAILED_LIST -> toDetailedListModel(manga, options, override, isPinned)
-		ListMode.GRID -> toGridModel(manga, options, override, isPinned)
+		ListMode.LIST -> toCompactListModel(manga, options, override, differentiator)
+		ListMode.DETAILED_LIST -> toDetailedListModel(manga, options, override, isPinned, differentiator)
+		ListMode.GRID -> toGridModel(manga, options, override, isPinned, differentiator)
 	}
 
 	private suspend fun getCounter(mangaId: Long, @Options options: Int): Int {
@@ -156,10 +165,16 @@ class MangaListMapper @Inject constructor(
 	}
 
 	private suspend fun getProgress(mangaId: Long, @Options options: Int): ReadingProgress? {
-		return if (options.isBadgeEnabled(PROGRESS)) {
-			historyRepository.getProgress(mangaId, settings.progressIndicatorMode)
-		} else {
+		if (!options.isBadgeEnabled(PROGRESS)) {
+			return null
+		}
+		val progress = historyRepository.getProgress(mangaId, settings.progressIndicatorMode)
+		// Experimental "Show completed check-mark" toggle: when off, drop the ring for finished manga
+		// entirely so a caught-up title shows a clean cover (only the unread-chapter count matters).
+		return if (progress != null && progress.isCompleted() && !settings.isCheckMarkBadgeEnabled) {
 			null
+		} else {
+			progress
 		}
 	}
 

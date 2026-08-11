@@ -25,6 +25,7 @@ import org.koitharu.kotatsu.core.util.ext.MutableEventFlow
 import org.koitharu.kotatsu.core.util.ext.call
 import org.koitharu.kotatsu.core.util.ext.printStackTraceDebug
 import org.koitharu.kotatsu.explore.data.MangaSourcesRepository
+import org.koitharu.kotatsu.history.data.HistoryRepository
 import org.koitharu.kotatsu.parsers.model.Manga
 import org.koitharu.kotatsu.parsers.model.MangaSource
 import org.koitharu.kotatsu.parsers.util.runCatchingCancellable
@@ -43,6 +44,9 @@ data class MigrationRow(
 	val originalChaptersCount: Int,
 	val match: MatchState,
 	val skipped: Boolean = false,
+	/** Furthest-read chapter of the original (1-based), and its total; both 0 when unread/unknown. */
+	val readChapter: Int = 0,
+	val readTotal: Int = 0,
 )
 
 @HiltViewModel
@@ -53,6 +57,7 @@ class MigrationListViewModel @Inject constructor(
 	private val mangaRepositoryFactory: MangaRepository.Factory,
 	private val migrateUseCase: MigrateUseCase,
 	private val sourcesRepository: MangaSourcesRepository,
+	private val historyRepository: HistoryRepository,
 	private val settings: AppSettings,
 ) : BaseViewModel() {
 
@@ -60,6 +65,9 @@ class MigrationListViewModel @Inject constructor(
 	private val initialSourceName: String? = savedStateHandle.get<String>(MigrationListActivity.EXTRA_SOURCE)
 
 	private var originals: List<Manga> = emptyList()
+	// Furthest-read chapter position + total per manga id, resolved once from saved history. Broken
+	// (imported) manga have no chapter list, so this is the only way to show their reading progress.
+	private var readPositions: Map<Long, Pair<Int, Int>> = emptyMap()
 
 	private val rows = MutableStateFlow<List<MigrationRow>>(emptyList())
 	private val options = MutableStateFlow(settings.migrationOptions)
@@ -120,7 +128,10 @@ class MigrationListViewModel @Inject constructor(
 				mangaDataRepository.findMangaById(id, withChapters = true)?.let(list::add)
 			}
 			originals = list
-			rows.value = list.map { MigrationRow(it, it.chaptersCount(), MatchState.Searching) }
+			readPositions = list.mapNotNull { manga ->
+				historyRepository.getReadPosition(manga.id)?.let { manga.id to it }
+			}.toMap()
+			rows.value = list.map { newRow(it, MatchState.Searching) }
 			availableSources.value = sourcesRepository.getEnabledSources()
 			targetSource.value = resolveDefaultSource(list)
 			rematchIfNeeded()
@@ -211,7 +222,7 @@ class MigrationListViewModel @Inject constructor(
 			// reset to Searching, keeping any per-row skip flags
 			val skipped = rows.value.associate { it.original.id to it.skipped }
 			rows.value = originals.map {
-				MigrationRow(it, it.chaptersCount(), MatchState.Searching, skipped[it.id] == true)
+				newRow(it, MatchState.Searching, skipped[it.id] == true)
 			}
 			val source = key.source
 			if (source == null) {
@@ -260,6 +271,18 @@ class MigrationListViewModel @Inject constructor(
 	@Synchronized
 	private fun updateRow(originalId: Long, state: MatchState) {
 		rows.value = rows.value.map { if (it.original.id == originalId) it.copy(match = state) else it }
+	}
+
+	private fun newRow(manga: Manga, match: MatchState, skipped: Boolean = false): MigrationRow {
+		val readPosition = readPositions[manga.id]
+		return MigrationRow(
+			original = manga,
+			originalChaptersCount = manga.chaptersCount(),
+			match = match,
+			skipped = skipped,
+			readChapter = readPosition?.first ?: 0,
+			readTotal = readPosition?.second ?: 0,
+		)
 	}
 
 	private suspend fun resolveDefaultSource(originals: List<Manga>): MangaSource? {

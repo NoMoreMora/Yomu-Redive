@@ -19,6 +19,13 @@
 			android:summary="@string/reader_resume_fix_summary"
 			android:title="@string/reader_resume_fix" />
 
+		<SwitchPreferenceCompat
+			android:defaultValue="true"
+			android:icon="@drawable/ic_check"
+			android:key="exp_show_check_mark_badge"
+			android:summary="@string/show_check_mark_badge_summary"
+			android:title="@string/show_check_mark_badge" />
+
 	</PreferenceCategory>
 
 	<PreferenceCategory android:title="@string/debug">

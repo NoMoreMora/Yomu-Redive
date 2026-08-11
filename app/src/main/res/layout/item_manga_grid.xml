@@ -68,6 +68,22 @@
 
 			</LinearLayout>
 
+			<!-- Shown for broken/unsupported manga (e.g. imported without a matching source). -->
+			<TextView
+				android:id="@+id/textView_broken"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_marginTop="4dp"
+				android:background="@drawable/bg_badge_broken"
+				android:paddingHorizontal="6dp"
+				android:paddingVertical="1dp"
+				android:text="@string/broken"
+				android:textAppearance="?attr/textAppearanceLabelSmall"
+				android:textColor="?attr/colorOnError"
+				android:textStyle="bold"
+				android:visibility="gone"
+				tools:visibility="visible" />
+
 			<!-- Pinned / downloaded markers stack under the badges rather than sharing the corner. -->
 			<org.koitharu.kotatsu.core.ui.widgets.IconsView
 				android:id="@+id/iconsView"

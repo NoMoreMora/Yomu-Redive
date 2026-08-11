@@ -36,8 +36,11 @@ import org.koitharu.kotatsu.scrobbling.common.domain.Scrobbler
 import org.koitharu.kotatsu.scrobbling.common.domain.tryScrobble
 import org.koitharu.kotatsu.search.domain.SearchKind
 import org.koitharu.kotatsu.tracker.domain.CheckNewChaptersUseCase
+import java.time.Instant
+import java.time.ZoneId
 import kotlin.math.abs
 import kotlin.math.ceil
+import kotlin.math.roundToInt
 import javax.inject.Inject
 import javax.inject.Provider
 
@@ -115,6 +118,28 @@ class HistoryRepository @Inject constructor(
 		}
 	}
 
+	/**
+	 * Per-day reading log for the History tab. Keeps the older days when a manga is re-read on a
+	 * later day (one entry per manga per day), unlike [observeAllWithHistory] which shows one row per
+	 * manga. Falls back to the single-row source for the Downloaded filter.
+	 */
+	fun observeHistoryLog(
+		order: ListSortOrder,
+		filterOptions: Set<ListFilterOption>,
+		limit: Int,
+	): Flow<List<MangaWithHistory>> {
+		if (ListFilterOption.Downloaded in filterOptions) {
+			return localObserver.observeAll(order, filterOptions, limit)
+		}
+		return db.getHistoryLogDao().observeAll(order, filterOptions, limit).mapItems {
+			MangaWithHistory(
+				manga = it.toManga(),
+				history = it.history.toMangaHistory(),
+				id = it.history.id,
+			)
+		}
+	}
+
 	suspend fun addOrUpdate(manga: Manga, chapterId: Long, page: Int, scroll: Int, percent: Float, force: Boolean) {
 		if (!force && shouldSkip(manga)) {
 			return
@@ -123,22 +148,74 @@ class HistoryRepository @Inject constructor(
 		db.withTransaction {
 			mangaRepository.storeManga(manga, replaceExisting = true)
 			val branch = manga.chapters?.findById(chapterId)?.branch
+			val now = System.currentTimeMillis()
+			val chaptersCount = manga.chapters?.count { it.branch == branch } ?: 0
 			db.getHistoryDao().upsert(
 				HistoryEntity(
 					mangaId = manga.id,
-					createdAt = System.currentTimeMillis(),
-					updatedAt = System.currentTimeMillis(),
+					createdAt = now,
+					updatedAt = now,
 					chapterId = chapterId,
 					page = page,
 					scroll = scroll.toFloat(), // we migrate to int, but decide to not update database
 					percent = percent,
-					chaptersCount = manga.chapters?.count { it.branch == branch } ?: 0,
+					chaptersCount = chaptersCount,
 					deletedAt = 0L,
 				),
 			)
+			appendHistoryLog(manga.id, chapterId, page, scroll.toFloat(), percent, chaptersCount, now)
 			newChaptersUseCaseProvider.get()(manga, chapterId)
 			scrobblers.forEach { it.tryScrobble(manga, chapterId) }
 		}
+	}
+
+	/**
+	 * Appends a dated row to the per-day [history_log][org.koitharu.kotatsu.history.data.HistoryLogEntity],
+	 * or updates today's row in place so a single day collapses to one entry that keeps its progress.
+	 */
+	private suspend fun appendHistoryLog(
+		mangaId: Long,
+		chapterId: Long,
+		page: Int,
+		scroll: Float,
+		percent: Float,
+		chaptersCount: Int,
+		now: Long,
+	) {
+		val dao = db.getHistoryLogDao()
+		val last = dao.findLast(mangaId)
+		if (last != null && isSameLocalDay(last.createdAt, now)) {
+			dao.updateProgress(
+				id = last.id,
+				page = page,
+				chapterId = chapterId,
+				scroll = scroll,
+				percent = percent,
+				chapters = chaptersCount,
+				updatedAt = now,
+			)
+		} else {
+			dao.insert(
+				HistoryLogEntity(
+					id = 0L,
+					mangaId = mangaId,
+					createdAt = now,
+					updatedAt = now,
+					chapterId = chapterId,
+					page = page,
+					scroll = scroll,
+					percent = percent,
+					deletedAt = 0L,
+					chaptersCount = chaptersCount,
+				),
+			)
+		}
+	}
+
+	private fun isSameLocalDay(a: Long, b: Long): Boolean {
+		val zone = ZoneId.systemDefault()
+		return Instant.ofEpochMilli(a).atZone(zone).toLocalDate() ==
+			Instant.ofEpochMilli(b).atZone(zone).toLocalDate()
 	}
 
 	suspend fun getOne(manga: Manga): MangaHistory? {
@@ -160,6 +237,20 @@ class HistoryRepository @Inject constructor(
 		return result
 	}
 
+	/**
+	 * The furthest-read chapter position (1-based) and the total chapter count for a manga, or `null`
+	 * when there is no valid saved progress. Used by the migration screen to surface the last-read
+	 * chapter for broken (source-less) entries, whose own chapter list is empty so "Latest" reads 0.
+	 */
+	suspend fun getReadPosition(mangaId: Long): Pair<Int, Int>? {
+		val entity = db.getHistoryDao().find(mangaId) ?: return null
+		if (!ReadingProgress.isValid(entity.percent) || entity.chaptersCount <= 0) {
+			return null
+		}
+		val position = (entity.chaptersCount * entity.percent).roundToInt().coerceIn(1, entity.chaptersCount)
+		return position to entity.chaptersCount
+	}
+
 	suspend fun getProgress(mangaId: Long, mode: ProgressIndicatorMode): ReadingProgress? {
 		val entity = db.getHistoryDao().find(mangaId) ?: return null
 		val fixedPercent = if (ReadingProgress.isCompleted(entity.percent)) 1f else entity.percent
@@ -170,22 +261,26 @@ class HistoryRepository @Inject constructor(
 		).takeIf { it.isValid() }
 	}
 
-	suspend fun clear() {
+	suspend fun clear() = db.withTransaction {
 		db.getHistoryDao().clear()
+		db.getHistoryLogDao().clear()
 	}
 
 	suspend fun delete(manga: Manga) = db.withTransaction {
 		db.getHistoryDao().delete(manga.id)
+		db.getHistoryLogDao().delete(manga.id)
 		mangaRepository.gcChaptersCache()
 	}
 
 	suspend fun deleteAfter(minDate: Long) = db.withTransaction {
 		db.getHistoryDao().deleteAfter(minDate)
+		db.getHistoryLogDao().deleteAfter(minDate)
 		mangaRepository.gcChaptersCache()
 	}
 
 	suspend fun deleteNotFavorite() = db.withTransaction {
 		db.getHistoryDao().deleteNotFavorite()
+		db.getHistoryLogDao().deleteNotFavorite()
 		mangaRepository.gcChaptersCache()
 	}
 
@@ -193,6 +288,7 @@ class HistoryRepository @Inject constructor(
 		db.withTransaction {
 			for (id in ids) {
 				db.getHistoryDao().delete(id)
+				db.getHistoryLogDao().delete(id)
 			}
 			mangaRepository.gcChaptersCache()
 		}
@@ -231,6 +327,7 @@ class HistoryRepository @Inject constructor(
 		db.withTransaction {
 			for (id in ids) {
 				db.getHistoryDao().recover(id)
+				db.getHistoryLogDao().recover(id)
 			}
 		}
 	}
@@ -286,6 +383,8 @@ class HistoryRepository @Inject constructor(
 	}
 
 	private fun HistoryWithManga.toManga() = manga.toManga(tags.toMangaTags(), null)
+
+	private fun HistoryLogWithManga.toManga() = manga.toManga(tags.toMangaTags(), null)
 
 	private fun String.matchesTitle(manga: Manga): Boolean {
 		if (almostEquals(manga.title, TITLE_MATCH_THRESHOLD)) {

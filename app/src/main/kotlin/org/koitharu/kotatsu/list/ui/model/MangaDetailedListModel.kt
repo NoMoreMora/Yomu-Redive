@@ -17,7 +17,11 @@ data class MangaDetailedListModel(
 	val isSaved: Boolean,
 	val tags: List<ChipsView.ChipModel>,
 	val isPinned: Boolean = false,
+	val differentiator: Long = 0L,
 ) : MangaListModel() {
+
+	override val listId: Long
+		get() = if (differentiator != 0L) differentiator else id
 
 	override fun getChangePayload(previousState: ListModel): Any? = when {
 		previousState !is MangaDetailedListModel || previousState.manga != manga -> null

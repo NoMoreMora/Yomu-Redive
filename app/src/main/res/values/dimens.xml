@@ -25,6 +25,10 @@
 	<dimen name="preferred_grid_width">120dp</dimen>
 	<dimen name="small_grid_width">92dp</dimen>
 	<dimen name="smaller_grid_width">102dp</dimen>
+	<!-- Caps the width of each migration cover card so the side-by-side cards stay phone-sized on
+	     wide/tablet screens instead of stretching to half the display. Phones fall under this and are
+	     unaffected. -->
+	<dimen name="migration_cover_max_width">144dp</dimen>
 	<dimen name="list_footer_height_outer">48dp</dimen>
 	<dimen name="screen_padding">16dp</dimen>
 	<dimen name="selection_stroke_width">2dp</dimen>

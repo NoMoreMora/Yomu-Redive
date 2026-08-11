@@ -178,6 +178,10 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 	val isReaderResumeFixEnabled: Boolean
 		get() = prefs.getBoolean(KEY_READER_RESUME_FIX, false)
 
+	// Default true keeps the current behaviour; turning it off hides the "all caught up" check mark.
+	val isCheckMarkBadgeEnabled: Boolean
+		get() = prefs.getBoolean(KEY_SHOW_CHECK_MARK_BADGE, true)
+
 	val isDebugLoggingEnabled: Boolean
 		get() = prefs.getBoolean(KEY_DEBUG_LOGGING, false)
 
@@ -1019,6 +1023,7 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 		const val KEY_EXPERIMENTAL_FEATURES = "experimental_features"
 		const val KEY_TRANSLATE_DESCRIPTIONS = "exp_translate_descriptions"
 		const val KEY_READER_RESUME_FIX = "exp_reader_resume_fix"
+		const val KEY_SHOW_CHECK_MARK_BADGE = "exp_show_check_mark_badge"
 		const val KEY_DEBUG_LOGGING = "debug_logging"
 		const val KEY_EXPORT_LOG = "export_log"
 		const val KEY_COLLAPSE_DESCRIPTION = "description_collapse"
