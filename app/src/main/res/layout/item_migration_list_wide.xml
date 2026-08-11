@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content"
+	android:baselineAligned="false"
+	android:gravity="center_vertical"
+	android:orientation="horizontal"
+	android:paddingStart="@dimen/screen_padding"
+	android:paddingEnd="@dimen/margin_small"
+	android:paddingTop="@dimen/margin_small"
+	android:paddingBottom="@dimen/margin_small">
+
+	<LinearLayout
+		android:id="@+id/card_from"
+		android:layout_width="0dp"
+		android:layout_height="wrap_content"
+		android:layout_weight="1"
+		android:baselineAligned="false"
+		android:gravity="center_vertical"
+		android:orientation="horizontal">
+
+		<org.koitharu.kotatsu.image.ui.CoverImageView
+			android:id="@+id/imageView_cover_from"
+			android:layout_width="48dp"
+			android:layout_height="66dp"
+			android:background="?colorSurfaceContainer"
+			android:scaleType="centerCrop"
+			app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Kotatsu.Cover"
+			tools:src="@tools:sample/backgrounds/scenic" />
+
+		<LinearLayout
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:layout_marginStart="@dimen/margin_small"
+			android:layout_weight="1"
+			android:orientation="vertical">
+
+			<TextView
+				android:id="@+id/textView_title_from"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:ellipsize="end"
+				android:maxLines="2"
+				android:textAppearance="?attr/textAppearanceTitleSmall"
+				tools:text="Original manga title" />
+
+			<TextView
+				android:id="@+id/textView_source_from"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:ellipsize="end"
+				android:maxLines="1"
+				android:textAppearance="?attr/textAppearanceBodySmall"
+				android:textColor="?android:attr/textColorSecondary"
+				tools:text="Source A" />
+
+			<TextView
+				android:id="@+id/textView_latest_from"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:ellipsize="end"
+				android:maxLines="1"
+				android:textAppearance="?attr/textAppearanceBodySmall"
+				android:textColor="?android:attr/textColorSecondary"
+				tools:text="Latest: 71" />
+
+		</LinearLayout>
+
+	</LinearLayout>
+
+	<ImageView
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_gravity="center_vertical"
+		android:layout_marginHorizontal="@dimen/margin_small"
+		android:contentDescription="@null"
+		android:src="@drawable/ic_arrow_forward"
+		app:tint="?android:attr/textColorSecondary" />
+
+	<LinearLayout
+		android:id="@+id/card_to"
+		android:layout_width="0dp"
+		android:layout_height="wrap_content"
+		android:layout_weight="1"
+		android:background="?attr/selectableItemBackground"
+		android:baselineAligned="false"
+		android:clickable="true"
+		android:focusable="true"
+		android:gravity="center_vertical"
+		android:orientation="horizontal">
+
+		<FrameLayout
+			android:layout_width="48dp"
+			android:layout_height="66dp">
+
+			<org.koitharu.kotatsu.image.ui.CoverImageView
+				android:id="@+id/imageView_cover_to"
+				android:layout_width="match_parent"
+				android:layout_height="match_parent"
+				android:background="?colorSurfaceContainer"
+				android:scaleType="centerCrop"
+				app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Kotatsu.Cover"
+				tools:src="@tools:sample/backgrounds/scenic" />
+
+			<com.google.android.material.progressindicator.CircularProgressIndicator
+				android:id="@+id/progress_to"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_gravity="center"
+				android:indeterminate="true"
+				android:visibility="gone"
+				tools:visibility="visible" />
+
+		</FrameLayout>
+
+		<LinearLayout
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:layout_marginStart="@dimen/margin_small"
+			android:layout_weight="1"
+			android:orientation="vertical">
+
+			<TextView
+				android:id="@+id/textView_title_to"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:ellipsize="end"
+				android:maxLines="2"
+				android:textAppearance="?attr/textAppearanceTitleSmall"
+				tools:text="Matched manga title" />
+
+			<TextView
+				android:id="@+id/textView_source_to"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:ellipsize="end"
+				android:maxLines="1"
+				android:textAppearance="?attr/textAppearanceBodySmall"
+				android:textColor="?android:attr/textColorSecondary"
+				tools:text="Source B" />
+
+			<TextView
+				android:id="@+id/textView_latest_to"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:ellipsize="end"
+				android:maxLines="1"
+				android:textAppearance="?attr/textAppearanceBodySmall"
+				android:textColor="?android:attr/textColorSecondary"
+				tools:text="Latest: 214" />
+
+		</LinearLayout>
+
+	</LinearLayout>
+
+	<ImageButton
+		android:id="@+id/button_menu"
+		android:layout_width="48dp"
+		android:layout_height="48dp"
+		android:layout_gravity="center_vertical"
+		android:background="?attr/selectableItemBackgroundBorderless"
+		android:contentDescription="@string/more"
+		android:src="@drawable/ic_more_vert" />
+
+</LinearLayout>

@@ -28,6 +28,14 @@
 		<item>@string/detailed_list</item>
 		<item>@string/grid</item>
 	</string-array>
+	<string-array name="migration_tablet_layouts" translatable="false">
+		<item>@string/migration_layout_default</item>
+		<item>@string/migration_layout_grid</item>
+		<item>@string/migration_layout_wide</item>
+		<item>@string/migration_layout_master_detail</item>
+		<item>@string/migration_layout_sidebar</item>
+		<item>@string/migration_layout_carousel</item>
+	</string-array>
 	<string-array name="screenshots_policy" translatable="false">
 		<item>@string/screenshots_allow</item>
 		<item>@string/screenshots_block_nsfw</item>

@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent">
+
+	<TextView
+		android:id="@+id/textView_empty"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_gravity="center"
+		android:padding="@dimen/margin_normal"
+		android:text="@string/migration_select_a_row"
+		android:textAppearance="?attr/textAppearanceBodyMedium"
+		android:textColor="?android:attr/textColorSecondary" />
+
+	<androidx.core.widget.NestedScrollView
+		android:id="@+id/scroll_content"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:clipToPadding="false"
+		android:padding="@dimen/margin_normal"
+		android:visibility="gone"
+		tools:visibility="visible">
+
+		<LinearLayout
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:orientation="vertical">
+
+			<LinearLayout
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:baselineAligned="false"
+				android:orientation="horizontal">
+
+				<LinearLayout
+					android:layout_width="0dp"
+					android:layout_height="wrap_content"
+					android:layout_weight="1"
+					android:orientation="vertical">
+
+					<org.koitharu.kotatsu.image.ui.CoverImageView
+						android:id="@+id/imageView_cover_from"
+						android:layout_width="match_parent"
+						android:layout_height="220dp"
+						android:background="?colorSurfaceContainer"
+						android:scaleType="centerCrop"
+						app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Kotatsu.Cover"
+						tools:src="@tools:sample/backgrounds/scenic" />
+
+					<TextView
+						android:id="@+id/textView_title_from"
+						android:layout_width="match_parent"
+						android:layout_height="wrap_content"
+						android:layout_marginTop="@dimen/margin_small"
+						android:ellipsize="end"
+						android:maxLines="3"
+						android:textAppearance="?attr/textAppearanceTitleSmall"
+						tools:text="Original manga title" />
+
+					<TextView
+						android:id="@+id/textView_source_from"
+						android:layout_width="match_parent"
+						android:layout_height="wrap_content"
+						android:ellipsize="end"
+						android:maxLines="1"
+						android:textAppearance="?attr/textAppearanceBodySmall"
+						android:textColor="?android:attr/textColorSecondary"
+						tools:text="Source A" />
+
+					<TextView
+						android:id="@+id/textView_latest_from"
+						android:layout_width="match_parent"
+						android:layout_height="wrap_content"
+						android:ellipsize="end"
+						android:maxLines="1"
+						android:textAppearance="?attr/textAppearanceBodySmall"
+						android:textColor="?android:attr/textColorSecondary"
+						tools:text="Latest: 71" />
+
+				</LinearLayout>
+
+				<ImageView
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:layout_gravity="center_vertical"
+					android:layout_marginHorizontal="@dimen/margin_small"
+					android:contentDescription="@null"
+					android:src="@drawable/ic_arrow_forward"
+					app:tint="?android:attr/textColorSecondary" />
+
+				<LinearLayout
+					android:id="@+id/card_to"
+					android:layout_width="0dp"
+					android:layout_height="wrap_content"
+					android:layout_weight="1"
+					android:orientation="vertical">
+
+					<FrameLayout
+						android:layout_width="match_parent"
+						android:layout_height="220dp">
+
+						<org.koitharu.kotatsu.image.ui.CoverImageView
+							android:id="@+id/imageView_cover_to"
+							android:layout_width="match_parent"
+							android:layout_height="match_parent"
+							android:background="?colorSurfaceContainer"
+							android:scaleType="centerCrop"
+							app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Kotatsu.Cover"
+							tools:src="@tools:sample/backgrounds/scenic" />
+
+						<com.google.android.material.progressindicator.CircularProgressIndicator
+							android:id="@+id/progress_to"
+							android:layout_width="wrap_content"
+							android:layout_height="wrap_content"
+							android:layout_gravity="center"
+							android:indeterminate="true"
+							android:visibility="gone"
+							tools:visibility="visible" />
+
+					</FrameLayout>
+
+					<TextView
+						android:id="@+id/textView_title_to"
+						android:layout_width="match_parent"
+						android:layout_height="wrap_content"
+						android:layout_marginTop="@dimen/margin_small"
+						android:ellipsize="end"
+						android:maxLines="3"
+						android:textAppearance="?attr/textAppearanceTitleSmall"
+						tools:text="Matched manga title" />
+
+					<TextView
+						android:id="@+id/textView_source_to"
+						android:layout_width="match_parent"
+						android:layout_height="wrap_content"
+						android:ellipsize="end"
+						android:maxLines="1"
+						android:textAppearance="?attr/textAppearanceBodySmall"
+						android:textColor="?android:attr/textColorSecondary"
+						tools:text="Source B" />
+
+					<TextView
+						android:id="@+id/textView_latest_to"
+						android:layout_width="match_parent"
+						android:layout_height="wrap_content"
+						android:ellipsize="end"
+						android:maxLines="1"
+						android:textAppearance="?attr/textAppearanceBodySmall"
+						android:textColor="?android:attr/textColorSecondary"
+						tools:text="Latest: 214" />
+
+				</LinearLayout>
+
+			</LinearLayout>
+
+			<com.google.android.material.button.MaterialButton
+				android:id="@+id/button_migrate"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginTop="@dimen/margin_normal"
+				android:text="@string/migrate"
+				app:icon="@drawable/ic_replace" />
+
+			<com.google.android.material.button.MaterialButton
+				android:id="@+id/button_copy"
+				style="@style/Widget.Material3.Button.TonalButton"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginTop="@dimen/margin_small"
+				android:text="@android:string/copy" />
+
+			<com.google.android.material.button.MaterialButton
+				android:id="@+id/button_skip"
+				style="@style/Widget.Material3.Button.OutlinedButton"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginTop="@dimen/margin_small"
+				android:text="@string/dont_migrate" />
+
+			<com.google.android.material.button.MaterialButton
+				android:id="@+id/button_search"
+				style="@style/Widget.Material3.Button.TextButton"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:text="@string/search_manually" />
+
+		</LinearLayout>
+
+	</androidx.core.widget.NestedScrollView>
+
+</FrameLayout>

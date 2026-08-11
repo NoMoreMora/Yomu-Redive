@@ -5,6 +5,29 @@ fork of [Kotatsu-Redo](https://github.com/Kotatsu-Redo/Kotatsu-Redo). Releases u
 `major.minor.patch` numbers continuing the upstream line the fork forked from, so the in-app
 GitHub-releases updater treats each one as a normal upgrade.
 
+## [9.8.4-beta4] - 2026-08-11
+
+Development (pre-release) build for the in-app **Development** update channel.
+
+### Added
+
+- **Imported manga now show their original source.** A Tachiyomi import records where each manga came
+  from (e.g. **Manganato**) instead of just "Unknown" — the name is resolved from a bundled source-id
+  map (from the keiyoushi extensions index), falling back to the site domain. Each import is tagged
+  with its origin, so you can filter your library by source in the filter sheet.
+
+### Changed
+
+- **First-run setup can no longer leave every source showing.** In addition to not enabling sources
+  by language, the Welcome screen now forces "Show all sources" off, so a fresh install starts empty.
+  (If you updated over an older build, the old sources persist — clear app data for a truly fresh
+  start.)
+
+### Fixed
+
+- The migration screen shows **`Continue: Ch. N`** for any source that returns no chapters — not just
+  Tachiyomi imports, but also parser sources that are temporarily down (e.g. MangaBuddy showing 404).
+
 ## [9.8.4-beta3] - 2026-08-11
 
 Development (pre-release) build for the in-app **Development** update channel. Fixes to the beta2

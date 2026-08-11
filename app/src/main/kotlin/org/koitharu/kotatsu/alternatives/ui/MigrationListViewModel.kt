@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
@@ -36,7 +37,17 @@ import javax.inject.Inject
 sealed interface MatchState {
 	data object Searching : MatchState
 	data object NotFound : MatchState
-	data class Matched(val manga: Manga, val chaptersCount: Int) : MatchState
+
+	/**
+	 * A resolved match. [manga]/[chaptersCount] are the currently-selected candidate (so `apply()`,
+	 * `matchedCount`, `migrateRowNow` and the default row rendering keep working); [candidates] is the
+	 * full best-first list of alternatives shown by the candidate-carousel layout (design 5).
+	 */
+	data class Matched(
+		val manga: Manga,
+		val chaptersCount: Int,
+		val candidates: List<Pair<Manga, Int>> = emptyList(),
+	) : MatchState
 }
 
 data class MigrationRow(
@@ -74,6 +85,13 @@ class MigrationListViewModel @Inject constructor(
 	val targetSource = MutableStateFlow<MangaSource?>(null)
 	val availableSources = MutableStateFlow<List<MangaSource>>(emptyList())
 
+	/** Selected layout for the tablet Migration view (Developer options); 0 = default. */
+	val tabletLayout: Int
+		get() = settings.migrationTabletLayout
+
+	/** Row selected in the master-detail layout (design 3); null when nothing is selected yet. */
+	val selectedRowId = MutableStateFlow<Long?>(null)
+
 	val content: StateFlow<List<MigrationRow>> = combine(rows, options) { list, opts ->
 		list.filter { row ->
 			val m = row.match
@@ -90,8 +108,9 @@ class MigrationListViewModel @Inject constructor(
 	val onFinished = MutableEventFlow<Int>()
 	val onRowMigrated = MutableEventFlow<Unit>()
 
-	val matchedCount: Int
-		get() = rows.value.count { !it.skipped && it.match is MatchState.Matched }
+	val matchedCount: StateFlow<Int> = rows.map { list ->
+		list.count { !it.skipped && it.match is MatchState.Matched }
+	}.stateIn(viewModelScope + Dispatchers.Default, SharingStarted.Eagerly, 0)
 
 	private var matchJob: Job? = null
 	private var lastSearchKey: SearchKey? = null
@@ -155,7 +174,30 @@ class MigrationListViewModel @Inject constructor(
 	}
 
 	fun setMatch(originalId: Long, match: Manga) {
-		updateRow(originalId, MatchState.Matched(match, match.chaptersCount()))
+		val chapters = match.chaptersCount()
+		updateRow(originalId, MatchState.Matched(match, chapters, candidates = listOf(match to chapters)))
+	}
+
+	/** Marks a row as selected in the master-detail layout (design 3). */
+	fun selectRow(originalId: Long) {
+		selectedRowId.value = originalId
+	}
+
+	/**
+	 * Candidate carousel (design 5): rewrites the row's currently-selected candidate to [manga],
+	 * preserving the full candidate list so the carousel keeps showing every option.
+	 */
+	@Synchronized
+	fun selectCandidate(originalId: Long, manga: Manga) {
+		rows.value = rows.value.map { row ->
+			val m = row.match
+			if (row.original.id == originalId && m is MatchState.Matched) {
+				val picked = m.candidates.firstOrNull { it.first.id == manga.id } ?: return@map row
+				row.copy(match = m.copy(manga = picked.first, chaptersCount = picked.second))
+			} else {
+				row
+			}
+		}
 	}
 
 	fun setSkipped(originalId: Long, skipped: Boolean) {
@@ -232,17 +274,14 @@ class MigrationListViewModel @Inject constructor(
 				originals.forEach { original ->
 					launch {
 						val match = findMatch(original, source, key)
-						updateRow(
-							original.id,
-							if (match != null) MatchState.Matched(match.first, match.second) else MatchState.NotFound,
-						)
+						updateRow(original.id, match ?: MatchState.NotFound)
 					}
 				}
 			}
 		}
 	}
 
-	private suspend fun findMatch(original: Manga, source: MangaSource, key: SearchKey): Pair<Manga, Int>? {
+	private suspend fun findMatch(original: Manga, source: MangaSource, key: SearchKey): MatchState.Matched? {
 		val baseQuery = if (key.advanced) keywords(original.title) else original.title
 		val query = if (key.keywords.isNotEmpty()) "$baseQuery ${key.keywords}" else baseQuery
 		val kind = if (key.advanced) SearchKind.SIMPLE else SearchKind.TITLE
@@ -252,15 +291,21 @@ class MigrationListViewModel @Inject constructor(
 		if (hits.isEmpty()) {
 			return null
 		}
-		return if (key.byChapters) {
-			hits.take(MATCH_BY_CHAPTER_LIMIT)
-				.map { withDetails(it) }
-				.maxByOrNull { it.chaptersCount() }
-				?.let { it to it.chaptersCount() }
-		} else {
+		// Resolving details is a network getDetails call per candidate, so only fan out when we actually
+		// need several: matching by chapter count (which always scanned the top N to pick the largest),
+		// or the candidate-carousel layout (design 5). Otherwise resolve just the first hit as before, so
+		// ordinary migrations keep their original single-request cost.
+		val wantCandidates = key.byChapters || tabletLayout == LAYOUT_CANDIDATE_CAROUSEL
+		if (!wantCandidates) {
 			val details = withDetails(hits.first())
-			details to details.chaptersCount()
+			val chapters = details.chaptersCount()
+			return MatchState.Matched(details, chapters, candidates = listOf(details to chapters))
 		}
+		val candidates = hits.take(CANDIDATE_LIMIT)
+			.map { val details = withDetails(it); details to details.chaptersCount() }
+			.let { pairs -> if (key.byChapters) pairs.sortedByDescending { it.second } else pairs }
+		val best = candidates.firstOrNull() ?: return null
+		return MatchState.Matched(best.first, best.second, candidates)
 	}
 
 	private suspend fun withDetails(manga: Manga): Manga = runCatchingCancellable {
@@ -319,8 +364,13 @@ class MigrationListViewModel @Inject constructor(
 	)
 
 	private companion object {
-		private const val MATCH_BY_CHAPTER_LIMIT = 5
+		// Max hits to resolve details for and keep as selectable candidates (design 5). Each resolve is a
+		// network getDetails call, so this stays low; it also bounds the "match by chapter count" scan.
+		private const val CANDIDATE_LIMIT = 5
 		private const val TOP_SOURCES_LIMIT = 10
+		// Migration-view mode that shows the candidate carousel; must match the layout mapping in
+		// MigrationListActivity / the migration_tablet_layout entry-values.
+		private const val LAYOUT_CANDIDATE_CAROUSEL = 5
 		private val WORD_SEPARATORS = Regex("[^\\p{L}\\p{N}]+")
 	}
 }

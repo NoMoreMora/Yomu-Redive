@@ -1,9 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen
 	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
 	android:title="@string/developer_options">
 
 	<PreferenceCategory android:title="@string/experimental_features">
+
+		<ListPreference
+			android:defaultValue="0"
+			android:entries="@array/migration_tablet_layouts"
+			android:entryValues="@array/values_migration_tablet_layout"
+			android:icon="@drawable/ic_replace"
+			android:key="migration_tablet_layout"
+			android:title="@string/migration_tablet_layout"
+			app:useSimpleSummaryProvider="true" />
 
 		<SwitchPreferenceCompat
 			android:defaultValue="false"

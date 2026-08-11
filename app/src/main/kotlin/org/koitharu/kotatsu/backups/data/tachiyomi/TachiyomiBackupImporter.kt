@@ -251,8 +251,12 @@ class TachiyomiBackupImporter @Inject constructor(
 			for (line in lines) {
 				val tab = line.indexOf('\t')
 				if (tab > 0) {
-					val id = line.substring(0, tab).toLongOrNull() ?: continue
-					map[id] = line.substring(tab + 1)
+					val id = line.substring(0, tab).toLongOrNull()
+					// trim() guards against a stray CR if the asset is checked out with CRLF endings.
+					val name = line.substring(tab + 1).trim()
+					if (id != null && name.isNotEmpty()) {
+						map[id] = name
+					}
 				}
 			}
 			map

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="104dp"
+	android:layout_height="wrap_content"
+	android:background="?attr/selectableItemBackground"
+	android:clickable="true"
+	android:focusable="true"
+	android:orientation="vertical"
+	android:paddingHorizontal="@dimen/margin_small"
+	android:paddingVertical="@dimen/list_spacing_small">
+
+	<com.google.android.material.card.MaterialCardView
+		android:id="@+id/card_candidate"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		app:cardCornerRadius="@dimen/m3_card_corner"
+		app:strokeColor="?attr/colorPrimary"
+		app:strokeWidth="0dp">
+
+		<org.koitharu.kotatsu.image.ui.CoverImageView
+			android:id="@+id/imageView_cover"
+			android:layout_width="match_parent"
+			android:layout_height="120dp"
+			android:background="?colorSurfaceContainer"
+			android:scaleType="centerCrop"
+			tools:src="@tools:sample/backgrounds/scenic" />
+
+	</com.google.android.material.card.MaterialCardView>
+
+	<TextView
+		android:id="@+id/textView_title"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="@dimen/list_spacing_small"
+		android:ellipsize="end"
+		android:maxLines="2"
+		android:textAppearance="?attr/textAppearanceBodySmall"
+		tools:text="Candidate title" />
+
+	<TextView
+		android:id="@+id/textView_latest"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:ellipsize="end"
+		android:maxLines="1"
+		android:textAppearance="?attr/textAppearanceLabelSmall"
+		android:textColor="?android:attr/textColorSecondary"
+		tools:text="Latest: 214" />
+
+</LinearLayout>

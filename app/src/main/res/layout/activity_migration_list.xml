@@ -38,15 +38,34 @@
 
 	</com.google.android.material.appbar.AppBarLayout>
 
-	<androidx.recyclerview.widget.RecyclerView
-		android:id="@+id/recyclerView"
+	<LinearLayout
+		android:id="@+id/contentContainer"
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
-		android:clipToPadding="false"
-		android:orientation="vertical"
-		android:scrollbars="vertical"
-		app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-		app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior"
-		tools:listitem="@layout/item_migration_list" />
+		android:baselineAligned="false"
+		android:orientation="horizontal"
+		app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior">
+
+		<androidx.recyclerview.widget.RecyclerView
+			android:id="@+id/recyclerView"
+			android:layout_width="0dp"
+			android:layout_height="match_parent"
+			android:layout_weight="1"
+			android:clipToPadding="false"
+			android:orientation="vertical"
+			android:scrollbars="vertical"
+			app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+			tools:listitem="@layout/item_migration_list" />
+
+		<FrameLayout
+			android:id="@+id/detailPane"
+			android:layout_width="0dp"
+			android:layout_height="match_parent"
+			android:layout_weight="0"
+			android:background="?attr/colorSurfaceContainerLow"
+			android:visibility="gone"
+			tools:visibility="gone" />
+
+	</LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content"
+	android:baselineAligned="false"
+	android:orientation="horizontal"
+	android:paddingStart="@dimen/screen_padding"
+	android:paddingEnd="@dimen/margin_small"
+	android:paddingTop="@dimen/margin_normal"
+	android:paddingBottom="@dimen/margin_normal">
+
+	<LinearLayout
+		android:id="@+id/card_from"
+		android:layout_width="120dp"
+		android:layout_height="wrap_content"
+		android:layout_gravity="top"
+		android:orientation="vertical">
+
+		<org.koitharu.kotatsu.image.ui.CoverImageView
+			android:id="@+id/imageView_cover_from"
+			android:layout_width="120dp"
+			android:layout_height="166dp"
+			android:background="?colorSurfaceContainer"
+			android:scaleType="centerCrop"
+			app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.Kotatsu.Cover"
+			tools:src="@tools:sample/backgrounds/scenic" />
+
+		<TextView
+			android:id="@+id/textView_title_from"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:layout_marginTop="@dimen/margin_small"
+			android:ellipsize="end"
+			android:maxLines="2"
+			android:textAppearance="?attr/textAppearanceTitleSmall"
+			tools:text="Original manga title" />
+
+		<TextView
+			android:id="@+id/textView_source_from"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:ellipsize="end"
+			android:maxLines="1"
+			android:textAppearance="?attr/textAppearanceBodySmall"
+			android:textColor="?android:attr/textColorSecondary"
+			tools:text="Source A" />
+
+		<TextView
+			android:id="@+id/textView_latest_from"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:ellipsize="end"
+			android:maxLines="1"
+			android:textAppearance="?attr/textAppearanceBodySmall"
+			android:textColor="?android:attr/textColorSecondary"
+			tools:text="Latest: 71" />
+
+	</LinearLayout>
+
+	<FrameLayout
+		android:layout_width="0dp"
+		android:layout_height="wrap_content"
+		android:layout_gravity="center_vertical"
+		android:layout_marginStart="@dimen/margin_small"
+		android:layout_weight="1">
+
+		<TextView
+			android:id="@+id/textView_status"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_gravity="center"
+			android:textAppearance="?attr/textAppearanceBodySmall"
+			android:textColor="?android:attr/textColorSecondary"
+			android:visibility="gone"
+			tools:text="Searching…"
+			tools:visibility="visible" />
+
+		<androidx.recyclerview.widget.RecyclerView
+			android:id="@+id/recycler_candidates"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:clipToPadding="false"
+			android:orientation="horizontal"
+			android:paddingEnd="@dimen/margin_small"
+			app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+			tools:ignore="RtlSymmetry"
+			tools:listitem="@layout/item_migration_candidate" />
+
+	</FrameLayout>
+
+	<ImageButton
+		android:id="@+id/button_menu"
+		android:layout_width="48dp"
+		android:layout_height="48dp"
+		android:layout_gravity="center_vertical"
+		android:background="?attr/selectableItemBackgroundBorderless"
+		android:contentDescription="@string/more"
+		android:src="@drawable/ic_more_vert" />
+
+</LinearLayout>
