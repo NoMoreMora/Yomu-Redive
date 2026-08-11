@@ -45,16 +45,6 @@ For the complete feature set and general documentation, see the upstream project
 [**Kotatsu-Redo**](https://github.com/Kotatsu-Redo/Kotatsu-Redo) and
 [**Kotatsu**](https://github.com/KotatsuApp/Kotatsu).
 
-## Building
-
-```bash
-./gradlew assembleDebug
-```
-
-The debug build installs under `io.github.yomuredive.yomu.debug` (installable alongside the
-release). See [FORK.md](FORK.md) for build-environment notes, the release-signing setup, and the
-custom-sources (parser fork) workflow.
-
 ## Contributing
 
 Pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Contributions to the general
