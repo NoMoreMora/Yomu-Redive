@@ -657,7 +657,7 @@
     <string name="migration_completed">Migration completed</string>
     <string name="migration_migrate_to">Migrate to</string>
     <string name="migration_latest_chapter">Latest: %d</string>
-    <string name="migration_read_chapter">Read: %1$d / %2$d</string>
+    <string name="migration_read_chapter">Continue: Ch. %1$s</string>
     <string name="more_sources">More sources…</string>
     <string name="migrate_now">Migrate now</string>
     <string name="copy_now">Copy now</string>
@@ -775,10 +775,10 @@
     <string name="show_check_mark_badge">Show completed check mark</string>
     <string name="show_check_mark_badge_summary">Show a check mark on covers of manga you\'ve finished. Turn off to keep only the unread-chapter count.</string>
     <string name="broken">Broken</string>
-    <string name="debug_logging">Debug logging</string>
-    <string name="debug_logging_summary">Record diagnostic logs in the app. Turn on, reproduce the issue, then export the log.</string>
+    <string name="debug_logging">Verbose logging</string>
+    <string name="debug_logging_summary">A short diagnostic log is always kept, and the export includes the system log. Turn this on for extra-verbose detail while reproducing an issue.</string>
     <string name="export_log">Export debug log</string>
-    <string name="export_log_summary">Share the recorded log for troubleshooting</string>
+    <string name="export_log_summary">Share the recorded app + system log for troubleshooting</string>
     <string name="sfw">SFW</string>
     <string name="skip_all">Skip all</string>
     <string name="stuck">Stuck</string>

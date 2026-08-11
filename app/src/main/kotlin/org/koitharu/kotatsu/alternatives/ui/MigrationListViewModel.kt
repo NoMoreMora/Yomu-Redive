@@ -44,9 +44,8 @@ data class MigrationRow(
 	val originalChaptersCount: Int,
 	val match: MatchState,
 	val skipped: Boolean = false,
-	/** Furthest-read chapter of the original (1-based), and its total; both 0 when unread/unknown. */
-	val readChapter: Int = 0,
-	val readTotal: Int = 0,
+	/** Continue-from chapter number of a broken/imported original; 0 when unread/unknown. */
+	val continueChapter: Float = 0f,
 )
 
 @HiltViewModel
@@ -65,9 +64,9 @@ class MigrationListViewModel @Inject constructor(
 	private val initialSourceName: String? = savedStateHandle.get<String>(MigrationListActivity.EXTRA_SOURCE)
 
 	private var originals: List<Manga> = emptyList()
-	// Furthest-read chapter position + total per manga id, resolved once from saved history. Broken
-	// (imported) manga have no chapter list, so this is the only way to show their reading progress.
-	private var readPositions: Map<Long, Pair<Int, Int>> = emptyMap()
+	// Continue-from chapter number per manga id, resolved once from saved history. Broken (imported)
+	// manga have no chapter list, so this is the only way to show their reading position.
+	private var continueChapters: Map<Long, Float> = emptyMap()
 
 	private val rows = MutableStateFlow<List<MigrationRow>>(emptyList())
 	private val options = MutableStateFlow(settings.migrationOptions)
@@ -128,8 +127,8 @@ class MigrationListViewModel @Inject constructor(
 				mangaDataRepository.findMangaById(id, withChapters = true)?.let(list::add)
 			}
 			originals = list
-			readPositions = list.mapNotNull { manga ->
-				historyRepository.getReadPosition(manga.id)?.let { manga.id to it }
+			continueChapters = list.mapNotNull { manga ->
+				historyRepository.getContinueChapterNumber(manga.id)?.let { manga.id to it }
 			}.toMap()
 			rows.value = list.map { newRow(it, MatchState.Searching) }
 			availableSources.value = sourcesRepository.getEnabledSources()
@@ -274,34 +273,37 @@ class MigrationListViewModel @Inject constructor(
 	}
 
 	private fun newRow(manga: Manga, match: MatchState, skipped: Boolean = false): MigrationRow {
-		val readPosition = readPositions[manga.id]
 		return MigrationRow(
 			original = manga,
 			originalChaptersCount = manga.chaptersCount(),
 			match = match,
 			skipped = skipped,
-			readChapter = readPosition?.first ?: 0,
-			readTotal = readPosition?.second ?: 0,
+			continueChapter = continueChapters[manga.id] ?: 0f,
 		)
 	}
 
 	private suspend fun resolveDefaultSource(originals: List<Manga>): MangaSource? {
-		val allSources = sourcesRepository.allMangaSources
-		initialSourceName?.let { name -> allSources.firstOrNull { it.name == name } }?.let { return it }
+		// Only ever default to an ENABLED source — never a disabled one the user removed from their
+		// list (previously `preferred`/most-used could resolve to a disabled source like ComicK).
+		val enabled = sourcesRepository.getEnabledSources()
+		val enabledNames = enabled.mapTo(HashSet()) { it.name }
 		// Compare by name — MangaSource instances loaded from the DB don't always object-equal the
 		// enum instances returned by the sources repository, so a set/`in` check can miss the origin.
 		val originalSourceNames = originals.mapTo(HashSet()) { it.source.name }
-		val preferred = settings.migrationPreferredSource?.let { name -> allSources.firstOrNull { it.name == name } }
-		if (preferred != null && preferred.name !in originalSourceNames) {
-			return preferred
-		}
-		// Migrating away from the preferred source (or none set): fall back to the most-used enabled
-		// source that isn't one of the sources we're migrating from.
-		sourcesRepository.getTopSources(TOP_SOURCES_LIMIT).firstOrNull { it.name !in originalSourceNames }?.let { return it }
-		val enabled = sourcesRepository.getEnabledSources()
-		// Prefer a source we're not migrating from; if there is none (e.g. only the origin is
-		// enabled), fall back to the preferred/first enabled so the dropdown still has a selection.
-		return enabled.firstOrNull { it.name !in originalSourceNames } ?: preferred ?: enabled.firstOrNull()
+		// A source explicitly passed in when opening the screen wins, but only if it's enabled.
+		initialSourceName?.let { name -> enabled.firstOrNull { it.name == name } }?.let { return it }
+		// The saved preferred target, if it's enabled and not one we're migrating away from.
+		settings.migrationPreferredSource
+			?.let { name -> enabled.firstOrNull { it.name == name } }
+			?.takeIf { it.name !in originalSourceNames }
+			?.let { return it }
+		// Most-recently-used source that is enabled and not an origin.
+		sourcesRepository.getTopSources(TOP_SOURCES_LIMIT)
+			.firstOrNull { it.name in enabledNames && it.name !in originalSourceNames }
+			?.let { return it }
+		// Any other enabled source; if the only enabled one is an origin, still fall back to it so the
+		// dropdown has a selection.
+		return enabled.firstOrNull { it.name !in originalSourceNames } ?: enabled.firstOrNull()
 	}
 
 	private fun keywords(title: String): String = title.split(WORD_SEPARATORS)

@@ -238,17 +238,20 @@ class HistoryRepository @Inject constructor(
 	}
 
 	/**
-	 * The furthest-read chapter position (1-based) and the total chapter count for a manga, or `null`
-	 * when there is no valid saved progress. Used by the migration screen to surface the last-read
-	 * chapter for broken (source-less) entries, whose own chapter list is empty so "Latest" reads 0.
+	 * The chapter the user would continue from, as a STORY chapter number, or `null` when there's no
+	 * saved progress. Used by the migration screen for broken (source-less) entries, whose own chapter
+	 * list is empty so "Latest" reads 0. Imported entries carry the number in [HistoryEntity.scroll]
+	 * (with chapterId 0); others approximate it from the percent-based position.
 	 */
-	suspend fun getReadPosition(mangaId: Long): Pair<Int, Int>? {
+	suspend fun getContinueChapterNumber(mangaId: Long): Float? {
 		val entity = db.getHistoryDao().find(mangaId) ?: return null
+		if (entity.chapterId == 0L && entity.scroll > 0f) {
+			return entity.scroll
+		}
 		if (!ReadingProgress.isValid(entity.percent) || entity.chaptersCount <= 0) {
 			return null
 		}
-		val position = (entity.chaptersCount * entity.percent).roundToInt().coerceIn(1, entity.chaptersCount)
-		return position to entity.chaptersCount
+		return (entity.chaptersCount * entity.percent).roundToInt().coerceIn(1, entity.chaptersCount).toFloat()
 	}
 
 	suspend fun getProgress(mangaId: Long, mode: ProgressIndicatorMode): ReadingProgress? {

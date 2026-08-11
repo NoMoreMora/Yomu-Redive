@@ -5,6 +5,32 @@ fork of [Kotatsu-Redo](https://github.com/Kotatsu-Redo/Kotatsu-Redo). Releases u
 `major.minor.patch` numbers continuing the upstream line the fork forked from, so the in-app
 GitHub-releases updater treats each one as a normal upgrade.
 
+## [9.8.4-beta3] - 2026-08-11
+
+Development (pre-release) build for the in-app **Development** update channel. Fixes to the beta2
+Tachiyomi-import + migration work, plus a cleaner first run and richer logs.
+
+### Fixed
+
+- **Migration now resumes at the right chapter.** Imported reading progress is matched by the actual
+  chapter number (handling sources that list chapters out of numeric order), so migrating a manga
+  lands on the chapter you left off at — even when the new source has many more chapters than your
+  backup did. The old percentage-scaling (which overshot, e.g. ch. 3-ish → ch. 24) is gone.
+  Re-import your backup to refresh entries imported before this build.
+- **Migration target defaults to an enabled source** instead of occasionally a disabled one you
+  removed (e.g. ComicK when only MangaKIO/MangaDex are on).
+
+### Changed
+
+- The migration screen shows **`Continue: Ch. N`** for a broken/imported entry (the chapter you'd
+  resume from) instead of `Latest: 0`.
+- **First run no longer floods you with sources.** Picking a language on the Welcome screen now only
+  sets the sources-catalog default filter — it no longer enables every source in that language. Turn
+  on the sources you actually use from the catalog.
+- **Better diagnostic logs.** A short in-app log is always kept and the export now includes the
+  system log, so exported reports are no longer empty; the import and migration flows leave
+  breadcrumbs.
+
 ## [9.8.4-beta2] - 2026-08-11
 
 Development (pre-release) build for the in-app **Development** update channel.

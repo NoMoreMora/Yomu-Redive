@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.koitharu.kotatsu.core.LocalizedAppContext
+import org.koitharu.kotatsu.core.prefs.AppSettings
 import org.koitharu.kotatsu.core.ui.BaseViewModel
 import org.koitharu.kotatsu.core.util.LocaleComparator
 import org.koitharu.kotatsu.core.util.ext.mapSortedByCount
@@ -23,6 +24,7 @@ import javax.inject.Inject
 @HiltViewModel
 class WelcomeViewModel @Inject constructor(
 	private val repository: MangaSourcesRepository,
+	private val settings: AppSettings,
 	@LocalizedAppContext context: Context,
 ) : BaseViewModel() {
 
@@ -101,11 +103,10 @@ class WelcomeViewModel @Inject constructor(
 	}
 
 	private suspend fun commit() {
-		val languages = locales.value.selectedItems.mapToSet { it.language }
-		val types = types.value.selectedItems
-		val enabledSources = allSources.filterTo(EnumSet.noneOf(MangaParserSource::class.java)) { x ->
-			x.contentType in types && x.locale in languages
-		}
-		repository.setSourcesEnabledExclusive(enabledSources)
+		// Record the chosen content language so the sources catalog opens filtered to it, but DON'T
+		// auto-enable every source in that language — that floods a fresh install with dozens of
+		// sources. The user turns on the specific ones they want from the catalog.
+		settings.preferredSourcesLocale = locales.value.selectedItems.firstOrNull()?.language?.takeUnless { it.isEmpty() }
+		repository.setSourcesEnabledExclusive(emptySet())
 	}
 }

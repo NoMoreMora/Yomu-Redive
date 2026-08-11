@@ -114,6 +114,16 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 		get() = prefs.getString(KEY_MIGRATION_PREFERRED_SOURCE, null)
 		set(value) = prefs.edit { putString(KEY_MIGRATION_PREFERRED_SOURCE, value) }
 
+	// The content language chosen on the Welcome screen. Used only to default the sources-catalog
+	// filter — it no longer enables every source in that language.
+	var preferredSourcesLocale: String?
+		get() = prefs.getString(KEY_PREFERRED_SOURCES_LOCALE, null)
+		set(value) = prefs.edit { putString(KEY_PREFERRED_SOURCES_LOCALE, value) }
+
+	// Experimental tablet layout for the Migration review list (0 = default). See MigrationTabletLayout.
+	val migrationTabletLayout: Int
+		get() = prefs.getString(KEY_MIGRATION_TABLET_LAYOUT, null)?.toIntOrNull() ?: 0
+
 	var isMigrateChapters: Boolean
 		get() = prefs.getBoolean(KEY_MIGRATION_CHAPTERS, true)
 		set(value) = prefs.edit { putBoolean(KEY_MIGRATION_CHAPTERS, value) }
@@ -1009,6 +1019,8 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 		const val KEY_SOURCES_ENABLED_ALL = "sources_enabled_all"
 		const val KEY_QUICK_FILTER = "quick_filter"
 		const val KEY_MIGRATION_PREFERRED_SOURCE = "migration_preferred_source"
+		const val KEY_PREFERRED_SOURCES_LOCALE = "preferred_sources_locale"
+		const val KEY_MIGRATION_TABLET_LAYOUT = "migration_tablet_layout"
 		const val KEY_MIGRATION_CHAPTERS = "migration_chapters"
 		const val KEY_MIGRATION_CATEGORIES = "migration_categories"
 		const val KEY_MIGRATION_COVER = "migration_cover"

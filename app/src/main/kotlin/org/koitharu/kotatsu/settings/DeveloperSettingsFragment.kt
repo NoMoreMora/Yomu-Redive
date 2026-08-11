@@ -47,19 +47,18 @@ class DeveloperSettingsFragment : BasePreferenceFragment(R.string.developer_opti
 	private fun exportLog() {
 		val ctx = requireContext()
 		val entries = DebugLog.dump()
+		val logcat = DebugLog.dumpLogcat()
 		val text = buildString {
 			append("Yomu Re:Dive debug log\n")
 			append("App: ").append(BuildConfig.VERSION_NAME).append(" (").append(BuildConfig.VERSION_CODE)
 				.append(") ").append(BuildConfig.APPLICATION_ID).append('\n')
 			append("Device: ").append(Build.MANUFACTURER).append(' ').append(Build.MODEL).append('\n')
 			append("Android: ").append(Build.VERSION.RELEASE).append(" (API ").append(Build.VERSION.SDK_INT).append(")\n")
-			append("Logging enabled: ").append(DebugLog.isEnabled).append('\n')
-			append("--------\n")
-			append(
-				entries.ifEmpty {
-					"(no entries captured yet — turn on \"Debug logging\", reproduce the issue, then export again)"
-				},
-			)
+			append("Verbose logging: ").append(DebugLog.isEnabled).append('\n')
+			append("======== App log (").append(entries.count { it == '\n' } + 1).append(" entries) ========\n")
+			append(entries.ifEmpty { "(no in-app entries captured)" })
+			append("\n\n======== System log (Logcat) ========\n")
+			append(logcat)
 		}
 		val file = runCatching {
 			val dir = File(ctx.cacheDir, "logs").apply { mkdirs() }

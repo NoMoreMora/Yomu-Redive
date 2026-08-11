@@ -6,6 +6,7 @@ import org.koitharu.kotatsu.core.model.getPreferredBranch
 import org.koitharu.kotatsu.core.parser.MangaDataRepository
 import org.koitharu.kotatsu.core.parser.MangaRepository
 import org.koitharu.kotatsu.core.ui.model.MangaOverride
+import org.koitharu.kotatsu.core.util.DebugLog
 import org.koitharu.kotatsu.core.util.ext.printStackTraceDebug
 import org.koitharu.kotatsu.details.domain.ProgressUpdateUseCase
 import org.koitharu.kotatsu.history.data.HistoryEntity
@@ -22,6 +23,7 @@ import org.koitharu.kotatsu.tracker.data.TrackEntity
 import java.time.Instant
 import java.time.ZoneId
 import javax.inject.Inject
+import kotlin.math.roundToInt
 
 class MigrateUseCase
 @Inject
@@ -46,6 +48,10 @@ constructor(
 		copy: Boolean = false,
 		options: MigrationOptions = MigrationOptions.DEFAULT,
 	) {
+		DebugLog.d(
+			"Migrate ${if (copy) "copy" else "replace"}: '${oldManga.title}' [${oldManga.source.name}] " +
+				"-> '${newManga.title}' [${newManga.source.name}]",
+		)
 		val oldDetails = if (oldManga.chapters.isNullOrEmpty()) {
 			runCatchingCancellable {
 				mangaRepositoryFactory.create(oldManga.source).getDetails(oldManga)
@@ -89,6 +95,10 @@ constructor(
 					// Keep the per-day History tab (history_log) in step with the single-row history the
 					// reader writes; without this the migrated manga would vanish from the History tab.
 					seedHistoryLog(newHistory)
+					DebugLog.d(
+						"  resume chapterId=${newHistory.chapterId}, " +
+							"${(newHistory.percent * 100).roundToInt()}% of ${newHistory.chaptersCount} ch",
+					)
 					newHistory
 				} else {
 					null
@@ -217,25 +227,36 @@ constructor(
 		newManga: Manga,
 		history: HistoryEntity,
 	): HistoryEntity {
-		if (oldManga.chapters.isNullOrEmpty()) { // probably broken manga/source
+		if (oldManga.chapters.isNullOrEmpty()) { // broken/source-less manga (e.g. a Tachiyomi import)
 			val branch = newManga.getPreferredBranch(null)
 			val chapters = checkNotNull(newManga.getChapters(branch))
-			val currentChapter =
-				if (history.percent in 0f..1f) {
-					chapters[(chapters.lastIndex * history.percent).toInt()]
-				} else {
-					chapters.first()
-				}
+			val currentChapter = when {
+				// Imported entry: [scroll] holds the continue-from STORY chapter number and chapterId is
+				// 0. Resume at the new source's first chapter at or after it — this matches the real
+				// chapter no matter how far the series has grown since the backup, instead of scaling by
+				// percent (which overshoots when the new source has many more chapters).
+				history.chapterId == 0L && history.scroll > 0f ->
+					chapters.filter { it.number >= history.scroll }.minByOrNull { it.number } ?: chapters.last()
+
+				// Other broken manga carry a real percent + count: reuse the absolute reading position.
+				history.chaptersCount > 0 && history.percent in 0f..1f ->
+					chapters[((history.percent * history.chaptersCount).roundToInt() - 1).coerceIn(0, chapters.lastIndex)]
+
+				history.percent in 0f..1f -> chapters[(chapters.lastIndex * history.percent).toInt()]
+				else -> chapters.first()
+			}
+			val newChaptersCount = chapters.count { it.branch == currentChapter.branch }
+			val newIndex = chapters.indexOfFirst { it.id == currentChapter.id }.coerceAtLeast(0)
 			return HistoryEntity(
 				mangaId = newManga.id,
 				createdAt = history.createdAt,
 				updatedAt = history.updatedAt,
 				chapterId = currentChapter.id,
 				page = history.page,
-				scroll = history.scroll,
-				percent = history.percent,
+				scroll = 0f,
+				percent = ((newIndex + 1).toFloat() / newChaptersCount).coerceIn(0f, 1f),
 				deletedAt = 0,
-				chaptersCount = chapters.count { it.branch == currentChapter.branch },
+				chaptersCount = newChaptersCount,
 			)
 		}
 		val branch = oldManga.getPreferredBranch(history.toMangaHistory())

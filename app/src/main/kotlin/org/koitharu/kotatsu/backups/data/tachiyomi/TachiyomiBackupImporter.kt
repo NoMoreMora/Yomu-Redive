@@ -9,6 +9,7 @@ import org.koitharu.kotatsu.core.db.entity.MangaEntity
 import org.koitharu.kotatsu.core.db.entity.TagEntity
 import org.koitharu.kotatsu.core.model.UnknownMangaSource
 import org.koitharu.kotatsu.core.util.CompositeResult
+import org.koitharu.kotatsu.core.util.DebugLog
 import org.koitharu.kotatsu.core.util.progress.Progress
 import org.koitharu.kotatsu.favourites.data.FavouriteCategoryEntity
 import org.koitharu.kotatsu.favourites.data.FavouriteEntity
@@ -41,6 +42,7 @@ class TachiyomiBackupImporter @Inject constructor(
 		progress?.emit(Progress.INDETERMINATE)
 		val bytes = GZIPInputStream(input).use { it.readBytes() }
 		val backup = protoBuf.decodeFromByteArray(TachiyomiBackup.serializer(), bytes)
+		DebugLog.d("Tachiyomi import: ${backup.backupManga.size} manga, ${backup.backupCategories.size} categories")
 		// Recreate categories (Tachiyomi manga reference them by their `order`).
 		val categoryIdByOrder = importCategories(backup.backupCategories)
 		val fallbackCategoryId = if (backup.backupManga.any { it.categories.isEmpty() }) {
@@ -56,10 +58,13 @@ class TachiyomiBackupImporter @Inject constructor(
 				database.withTransaction {
 					database.importManga(manga, categoryIdByOrder, fallbackCategoryId)
 				}
+			}.onFailure {
+				DebugLog.e("Tachiyomi import failed for '${manga.title}' (${manga.chapters.size} ch)", it)
 			}
 			p++
 			progress?.emit(p)
 		}
+		DebugLog.d("Tachiyomi import finished (${backup.backupManga.size} processed)")
 		return result
 	}
 
@@ -154,14 +159,23 @@ class TachiyomiBackupImporter @Inject constructor(
 		if (total == 0) {
 			return null
 		}
-		// A chapter is "reached" once it is finished (read) or opened (has a saved page).
+		// A chapter is "reached" once it is finished (read) or opened (has a saved page). The furthest
+		// one by STORY chapter number is where the user left off — the source's own list order
+		// (sourceOrder) is unreliable, as some sources list chapters out of numeric order.
 		val reached = manga.chapters.filter { it.read || it.lastPageRead > 0L }
-		// sourceOrder is the source's own ordering with 0 = newest, so the furthest-read chapter is the
-		// reached one with the lowest sourceOrder; its 1-based reading position counts every chapter
-		// from the oldest up to and including it.
-		val furthest = reached.minByOrNull { it.sourceOrder } ?: return null
-		val position = manga.chapters.count { it.sourceOrder >= furthest.sourceOrder }
-		val percent = (position.toFloat() / total).coerceIn(0f, 1f)
+		val furthest = reached.maxByOrNull { it.chapterNumber } ?: return null
+		val lastNumber = furthest.chapterNumber
+		// The chapter to continue from: the next chapter after a finished one (Tachiyomi's "up next"),
+		// or the in-progress chapter itself. Computed here from the backup's own chapters, then matched
+		// onto the real source during Migration.
+		val continueNumber = if (furthest.read) {
+			manga.chapters.asSequence().map { it.chapterNumber }.filter { it > lastNumber }.minOrNull() ?: lastNumber
+		} else {
+			lastNumber
+		}
+		// Rough fraction for the progress bar; the exact resume point rides on [scroll] below.
+		val readCount = manga.chapters.count { it.chapterNumber in 0f..lastNumber }
+		val percent = (readCount.toFloat() / total).coerceIn(0f, 1f)
 		val timestamp = manga.history.maxOfOrNull { it.lastRead }?.takeIf { it > 0L }
 			?: manga.dateAdded.takeIf { it > 0L }
 			?: System.currentTimeMillis()
@@ -169,9 +183,11 @@ class TachiyomiBackupImporter @Inject constructor(
 			mangaId = mangaId,
 			createdAt = timestamp,
 			updatedAt = timestamp,
+			// chapterId 0 marks a source-less imported entry; [scroll] smuggles the continue-from
+			// chapter NUMBER so Migration can match it on the real source (see MigrateUseCase).
 			chapterId = 0L,
 			page = if (furthest.read) 0 else furthest.lastPageRead.toInt(),
-			scroll = 0f,
+			scroll = continueNumber,
 			percent = percent,
 			chaptersCount = total,
 			deletedAt = 0L,

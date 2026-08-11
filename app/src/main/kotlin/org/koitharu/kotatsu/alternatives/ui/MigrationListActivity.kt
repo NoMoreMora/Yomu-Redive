@@ -223,9 +223,11 @@ class MigrationListActivity : BaseActivity<ActivityMigrationListBinding>(), Menu
 			binding.textViewTitleFrom.text = row.original.title
 			binding.textViewSourceFrom.text = row.original.source.getTitle(ctx)
 			// Broken (e.g. Tachiyomi-imported) manga have no chapter list, so "Latest" would read 0;
-			// show the last-read chapter instead so there is a position to migrate from.
-			binding.textViewLatestFrom.text = if (row.original.isBroken && row.readChapter > 0) {
-				ctx.getString(R.string.migration_read_chapter, row.readChapter, row.readTotal)
+			// show the continue-from chapter instead so there is a position to migrate from.
+			binding.textViewLatestFrom.text = if (row.original.isBroken && row.continueChapter > 0f) {
+				val n = row.continueChapter
+				val label = if (n % 1f == 0f) n.toInt().toString() else n.toString()
+				ctx.getString(R.string.migration_read_chapter, label)
 			} else {
 				ctx.getString(R.string.migration_latest_chapter, row.originalChaptersCount)
 			}

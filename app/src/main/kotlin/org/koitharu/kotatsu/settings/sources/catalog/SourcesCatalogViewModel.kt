@@ -49,7 +49,8 @@ class SourcesCatalogViewModel @Inject constructor(
 	val appliedFilter = MutableStateFlow(
 		SourcesCatalogFilter(
 			types = emptySet(),
-			locale = Locale.getDefault().language.takeIf { it in locales },
+			// Default to the language the user picked on the Welcome screen, else the device language.
+			locale = (settings.preferredSourcesLocale ?: Locale.getDefault().language).takeIf { it in locales },
 			isNewOnly = false,
 		),
 	)
