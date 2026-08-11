@@ -33,29 +33,17 @@ Kotatsu (see [below](#inherited-from-kotatsu)).
 
 ## Roadmap
 
-```mermaid
-flowchart LR
-    v982["<b>9.8.2</b><br/>Initial build<br/>Migration Revamp · I<br/>Fold Support · I"]
-    v983["<b>9.8.3</b><br/>Migration Revamp · II<br/>Experimental Features<br/>Fold Support · II"]
-    v984["<b>9.8.4</b><br/>Backup &amp; Restore Revamp · I<br/>Source Cleanup"]
-    v990["<b>9.9.0</b><br/>UI Restructure<br/>&amp; Improvements"]
-    v991["<b>9.9.1</b><br/>More Tracker Support<br/>More Experimental Features"]
-    more(["More to come…"])
+<div align="center">
 
-    v982 --> v983 --> v984 --> v990 --> v991 --> more
+[![Yomu Re:Dive roadmap](docs/roadmap.png)](docs/roadmap.png)
 
-    classDef done fill:#2ea043,stroke:#238636,color:#ffffff;
-    classDef next fill:#1f6feb,stroke:#1158c7,color:#ffffff;
-    classDef planned fill:#30363d,stroke:#8b949e,color:#ffffff;
-    classDef future fill:#161b22,stroke:#8b949e,color:#c9d1d9,stroke-dasharray:5 5;
-    class v982,v983 done;
-    class v984 next;
-    class v990,v991 planned;
-    class more future;
-```
+</div>
 
-**Legend:** 🟢 released · 🔵 in progress · ⚫ planned · ⚪ future. Roadmap items are goals, not
+**Legend:** 🟢 released · 🔴 in progress · ⚫ planned · ⚪ future. Roadmap items are goals, not
 promises, and may shift.
+
+> The roadmap image is generated from [`docs/roadmap.json`](docs/roadmap.json) with the standalone
+> [`docs/roadmap-editor.html`](docs/roadmap-editor.html) — open it in a browser to edit and export a new `docs/roadmap.png`.
 
 ## Inherited from Kotatsu
 
