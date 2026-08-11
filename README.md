@@ -39,12 +39,6 @@ Kotatsu (see [below](#inherited-from-kotatsu)).
 
 </div>
 
-**Legend:** 🟢 released · 🔴 in progress · ⚫ planned · ⚪ future. Roadmap items are goals, not
-promises, and may shift.
-
-> The roadmap image is generated from [`docs/roadmap.json`](docs/roadmap.json) with the standalone
-> [`docs/roadmap-editor.html`](docs/roadmap-editor.html) — open it in a browser to edit and export a new `docs/roadmap.png`.
-
 ## Inherited from Kotatsu
 
 For the complete feature set and general documentation, see the upstream projects:
