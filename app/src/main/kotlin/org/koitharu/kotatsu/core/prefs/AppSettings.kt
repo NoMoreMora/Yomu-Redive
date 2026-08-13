@@ -74,7 +74,13 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 			return if (raw.isNullOrEmpty()) {
 				listOf(NavItem.HISTORY, NavItem.FAVORITES, NavItem.EXPLORE, NavItem.FEED)
 			} else {
-				raw.mapNotNull { x -> NavItem.entries.find(x) }.ifEmpty { listOf(NavItem.EXPLORE) }
+				val parsed = raw.mapNotNull { x -> NavItem.entries.find(x) }.ifEmpty { listOf(NavItem.EXPLORE) }
+				// Explore is pinned: keep it reachable even if an older/imported config dropped it.
+				if (NavItem.EXPLORE in parsed) {
+					parsed
+				} else {
+					parsed.toMutableList().apply { add(2.coerceAtMost(size), NavItem.EXPLORE) }
+				}
 			}
 		}
 		set(value) {
@@ -188,8 +194,9 @@ class AppSettings @Inject constructor(@ApplicationContext context: Context) {
 	val isCheckMarkBadgeEnabled: Boolean
 		get() = prefs.getBoolean(KEY_SHOW_CHECK_MARK_BADGE, true)
 
+	// Default ON so an exported log is always useful for troubleshooting without the user flipping it first.
 	val isDebugLoggingEnabled: Boolean
-		get() = prefs.getBoolean(KEY_DEBUG_LOGGING, false)
+		get() = prefs.getBoolean(KEY_DEBUG_LOGGING, true)
 
 	val isDescriptionExpanded: Boolean
 		get() = !prefs.getBoolean(KEY_COLLAPSE_DESCRIPTION, true)

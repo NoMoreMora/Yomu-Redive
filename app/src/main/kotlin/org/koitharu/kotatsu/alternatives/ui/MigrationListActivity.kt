@@ -13,6 +13,7 @@ import android.widget.ArrayAdapter
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.widget.PopupMenu
@@ -20,6 +21,7 @@ import androidx.core.view.MenuProvider
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.R as materialR
@@ -115,7 +117,10 @@ class MigrationListActivity : BaseActivity<ActivityMigrationListBinding>(), Menu
 			adapter.submit(it)
 			updateFinderCount()
 		}
-		viewModel.matchedCount.observe(this) { updateFinderCount() }
+		viewModel.matchedCount.observe(this) {
+			updateFinderCount()
+			invalidateMenu()
+		}
 		viewModel.selectedRowId.observe(this) { id ->
 			if (isSidebarLayout) {
 				adapter.setSelectedId(id)
@@ -143,6 +148,18 @@ class MigrationListActivity : BaseActivity<ActivityMigrationListBinding>(), Menu
 			).show()
 			finishAfterTransition()
 		}
+		// While a migration is applying: show the blocking overlay, swallow Back, and keep APPLY disabled —
+		// so nothing changes and the migration can't be re-triggered mid-run.
+		val applyingBackCallback = object : OnBackPressedCallback(false) {
+			override fun handleOnBackPressed() = Unit
+		}
+		onBackPressedDispatcher.addCallback(this, applyingBackCallback)
+		viewModel.isApplying.observe(this) { applying ->
+			viewBinding.progressOverlay.isVisible = applying
+			applyingBackCallback.isEnabled = applying
+			invalidateMenu()
+		}
+		viewModel.isMatching.observe(this) { invalidateMenu() }
 	}
 
 	override fun onApplyWindowInsets(v: View, insets: WindowInsetsCompat): WindowInsetsCompat {
@@ -166,6 +183,14 @@ class MigrationListActivity : BaseActivity<ActivityMigrationListBinding>(), Menu
 
 	override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
 		menuInflater.inflate(R.menu.opt_migration_list, menu)
+	}
+
+	override fun onPrepareMenu(menu: Menu) {
+		// APPLY is available as soon as one match exists — even while auto-matching is still running (the confirm
+		// dialog warns it's a partial set). It's only disabled during an in-progress migration, so repeated taps
+		// can't migrate everything twice.
+		menu.findItem(R.id.action_apply)?.isEnabled =
+			viewModel.matchedCount.value > 0 && !viewModel.isApplying.value
 	}
 
 	override fun onMenuItemSelected(menuItem: MenuItem): Boolean = when (menuItem.itemId) {
@@ -205,13 +230,21 @@ class MigrationListActivity : BaseActivity<ActivityMigrationListBinding>(), Menu
 	}
 
 	private fun showApplyDialog() {
-		if (viewModel.matchedCount.value == 0) {
+		val matched = viewModel.matchedCount.value
+		if (matched == 0) {
 			return
+		}
+		// If auto-matching is still running, warn that this migrates only the matches found so far and let the
+		// user proceed with the partial set or cancel and wait — rather than silently migrating a partial set.
+		val message = if (viewModel.isMatching.value) {
+			getString(R.string.migration_apply_partial_confirmation, matched)
+		} else {
+			getString(R.string.migration_apply_confirmation, matched)
 		}
 		buildAlertDialog(this, isCentered = true) {
 			setIcon(R.drawable.ic_replace)
 			setTitle(R.string.manga_migration)
-			setMessage(getString(R.string.migration_apply_confirmation, viewModel.matchedCount.value))
+			setMessage(message)
 			setNegativeButton(android.R.string.cancel, null)
 			setNeutralButton(android.R.string.copy) { _, _ -> viewModel.apply(copy = true) }
 			setPositiveButton(R.string.migrate) { _, _ -> viewModel.apply(copy = false) }
@@ -407,15 +440,22 @@ class MigrationListActivity : BaseActivity<ActivityMigrationListBinding>(), Menu
 			private set
 
 		fun submit(newItems: List<MigrationRow>) {
+			// DiffUtil so only the rows that actually changed rebind — matching updates rows one at a time, and
+			// a blanket notifyDataSetChanged() rebinds every visible row (re-issuing each cover load), which is
+			// what made the screen flash during matching. Also gives a clean remove animation for skipped rows.
+			val diff = DiffUtil.calculateDiff(RowDiffCallback(ArrayList(items), newItems))
 			items.clear()
 			items.addAll(newItems)
-			notifyDataSetChanged()
+			diff.dispatchUpdatesTo(this)
 		}
 
 		fun setSelectedId(id: Long?) {
 			if (selectedId != id) {
+				val previous = selectedId
 				selectedId = id
-				notifyDataSetChanged()
+				// Rebind only the previously- and newly-selected rows instead of the whole list.
+				items.indexOfFirst { it.original.id == previous }.takeIf { it >= 0 }?.let(::notifyItemChanged)
+				items.indexOfFirst { it.original.id == id }.takeIf { it >= 0 }?.let(::notifyItemChanged)
 			}
 		}
 
@@ -468,6 +508,21 @@ class MigrationListActivity : BaseActivity<ActivityMigrationListBinding>(), Menu
 			root.setOnClickListener(null)
 			root.isClickable = false
 		}
+	}
+
+	private class RowDiffCallback(
+		private val oldItems: List<MigrationRow>,
+		private val newItems: List<MigrationRow>,
+	) : DiffUtil.Callback() {
+		override fun getOldListSize() = oldItems.size
+		override fun getNewListSize() = newItems.size
+
+		override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int) =
+			oldItems[oldItemPosition].original.id == newItems[newItemPosition].original.id
+
+		// MigrationRow is a data class, so structural equality catches match-state / skip changes.
+		override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int) =
+			oldItems[oldItemPosition] == newItems[newItemPosition]
 	}
 
 	companion object {

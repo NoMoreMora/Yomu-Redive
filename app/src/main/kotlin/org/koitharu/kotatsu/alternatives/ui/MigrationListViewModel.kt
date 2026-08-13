@@ -15,7 +15,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import org.koitharu.kotatsu.alternatives.domain.MigrateUseCase
+import org.koitharu.kotatsu.alternatives.domain.MigrationCoordinator
 import org.koitharu.kotatsu.alternatives.domain.MigrationOptions
 import org.koitharu.kotatsu.core.model.chaptersCount
 import org.koitharu.kotatsu.core.parser.MangaDataRepository
@@ -59,6 +62,7 @@ class MigrationListViewModel @Inject constructor(
 	private val migrateUseCase: MigrateUseCase,
 	private val sourcesRepository: MangaSourcesRepository,
 	private val historyRepository: HistoryRepository,
+	private val migrationCoordinator: MigrationCoordinator,
 	private val settings: AppSettings,
 ) : BaseViewModel() {
 
@@ -83,6 +87,8 @@ class MigrationListViewModel @Inject constructor(
 		list.filter { row ->
 			val m = row.match
 			when {
+				// "Don't migrate" hides the row entirely (it stays skipped in `rows`, excluded from apply).
+				row.skipped -> false
 				opts.hideWithoutMatch && m is MatchState.NotFound -> false
 				opts.hideWithoutNewerChapters && m is MatchState.Matched &&
 					m.chaptersCount <= row.originalChaptersCount -> false
@@ -98,6 +104,12 @@ class MigrationListViewModel @Inject constructor(
 	val matchedCount: StateFlow<Int> = rows.map { list ->
 		list.count { !it.skipped && it.match is MatchState.Matched }
 	}.stateIn(viewModelScope + Dispatchers.Default, SharingStarted.Eagerly, 0)
+
+	/** True while auto-matching is still running, so APPLY can wait rather than migrate a partial set. */
+	val isMatching = MutableStateFlow(false)
+
+	/** True while a migration is being applied — blocks the UI and guards against repeated APPLY taps. */
+	val isApplying = MutableStateFlow(false)
 
 	private var matchJob: Job? = null
 	private var lastSearchKey: SearchKey? = null
@@ -161,7 +173,18 @@ class MigrationListViewModel @Inject constructor(
 	}
 
 	fun setMatch(originalId: Long, match: Manga) {
+		// Show the pick immediately, then resolve its real chapter count: a manga chosen from search results
+		// carries no chapter list, so chaptersCount() reads 0 ("Latest: 0") until details are fetched (this is
+		// why a manual match used to show 0 while auto-match — which calls getDetails — shows the true count).
 		updateRow(originalId, MatchState.Matched(match, match.chaptersCount()))
+		launchJob(Dispatchers.Default) {
+			val details = withDetails(match)
+			// Only apply if the row still holds this pick (the user may have re-matched meanwhile).
+			val current = (rows.value.firstOrNull { it.original.id == originalId }?.match as? MatchState.Matched)?.manga
+			if (current?.id == match.id) {
+				updateRow(originalId, MatchState.Matched(details, details.chaptersCount()))
+			}
+		}
 	}
 
 	/** Marks a row as selected in the tablet sidebar layout. */
@@ -177,36 +200,50 @@ class MigrationListViewModel @Inject constructor(
 		val row = rows.value.firstOrNull { it.original.id == originalId } ?: return
 		val target = (row.match as? MatchState.Matched)?.manga ?: return
 		launchLoadingJob(Dispatchers.Default) {
-			runCatchingCancellable {
-				migrateUseCase(row.original, target, copy = copy, options = options.value)
-			}.onSuccess {
-				rows.value = rows.value.filterNot { it.original.id == originalId }
-				originals = originals.filterNot { it.id == originalId }
-				onRowMigrated.call(Unit)
-			}.onFailure {
-				it.printStackTraceDebug()
+			// Pause active downloads while migrating so the two don't compete for CPU/network (overheating).
+			migrationCoordinator.withMigration {
+				runCatchingCancellable {
+					migrateUseCase(row.original, target, copy = copy, options = options.value)
+				}.onSuccess {
+					rows.value = rows.value.filterNot { it.original.id == originalId }
+					originals = originals.filterNot { it.id == originalId }
+					onRowMigrated.call(Unit)
+				}.onFailure {
+					it.printStackTraceDebug()
+				}
 			}
 		}
 	}
 
 	fun apply(copy: Boolean) {
+		if (isApplying.value) {
+			return // already migrating — ignore repeated APPLY taps (was migrating everything twice)
+		}
 		launchLoadingJob(Dispatchers.Default) {
-			val opts = options.value
-			var migrated = 0
-			for (row in rows.value) {
-				if (row.skipped) {
-					continue
+			isApplying.value = true
+			try {
+				// Pause active downloads while migrating so the two don't compete for CPU/network (overheating).
+				migrationCoordinator.withMigration {
+					val opts = options.value
+					var migrated = 0
+					for (row in rows.value) {
+						if (row.skipped) {
+							continue
+						}
+						val target = (row.match as? MatchState.Matched)?.manga ?: continue
+						runCatchingCancellable {
+							migrateUseCase(row.original, target, copy = copy, options = opts)
+						}.onSuccess {
+							migrated++
+						}.onFailure {
+							it.printStackTraceDebug()
+						}
+					}
+					onFinished.call(migrated)
 				}
-				val target = (row.match as? MatchState.Matched)?.manga ?: continue
-				runCatchingCancellable {
-					migrateUseCase(row.original, target, copy = copy, options = opts)
-				}.onSuccess {
-					migrated++
-				}.onFailure {
-					it.printStackTraceDebug()
-				}
+			} finally {
+				isApplying.value = false
 			}
-			onFinished.call(migrated)
 		}
 	}
 
@@ -227,7 +264,7 @@ class MigrationListViewModel @Inject constructor(
 
 	private fun startMatching(key: SearchKey) {
 		val prevJob = matchJob
-		matchJob = launchLoadingJob(Dispatchers.Default) {
+		val job = launchLoadingJob(Dispatchers.Default) {
 			prevJob?.cancelAndJoin()
 			// reset to Searching, keeping any per-row skip flags
 			val skipped = rows.value.associate { it.original.id to it.skipped }
@@ -239,13 +276,27 @@ class MigrationListViewModel @Inject constructor(
 				rows.value = rows.value.map { it.copy(match = MatchState.NotFound) }
 				return@launchLoadingJob
 			}
+			// Cap the auto-match fan-out: a whole-library migration would otherwise spawn one network+HTML-parse
+			// coroutine per manga and peg every CPU core (device overheating). Manual match selection goes
+			// through setMatch() — a direct state update that never reaches here — so it stays instant and uncapped.
+			val limiter = Semaphore(AUTO_MATCH_PARALLELISM)
 			coroutineScope {
 				originals.forEach { original ->
 					launch {
-						val match = findMatch(original, source, key)
-						updateRow(original.id, match ?: MatchState.NotFound)
+						limiter.withPermit {
+							val match = findMatch(original, source, key)
+							updateRow(original.id, match ?: MatchState.NotFound)
+						}
 					}
 				}
+			}
+		}
+		matchJob = job
+		isMatching.value = true
+		// Clear the flag only when THIS job ends; a superseding rematch keeps matching "in progress".
+		job.invokeOnCompletion {
+			if (matchJob === job) {
+				isMatching.value = false
 			}
 		}
 	}
@@ -329,6 +380,11 @@ class MigrationListViewModel @Inject constructor(
 	)
 
 	private companion object {
+		// Max manga auto-matched in parallel on the migration screen. Kept low so a full-library migration
+		// doesn't spawn a network+parse coroutine per manga and saturate the CPU (device overheating).
+		// Manual match selection (setMatch) is exempt — see startMatching.
+		private const val AUTO_MATCH_PARALLELISM = 2
+
 		// Max hits to resolve details for when matching by chapter count. Each resolve is a network
 		// getDetails call, so this stays low; it bounds the "match by chapter count" scan.
 		private const val CANDIDATE_LIMIT = 5

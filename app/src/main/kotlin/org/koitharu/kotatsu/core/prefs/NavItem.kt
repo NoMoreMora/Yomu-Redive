@@ -28,4 +28,11 @@ enum class NavItem(
 		UPDATED, FEED -> settings.isTrackerEnabled
 		else -> true
 	}
+
+	/**
+	 * Pinned sections can't be removed from the main navigation — they stay reachable no matter how the
+	 * user edits their sections. [EXPLORE] is pinned so browsing sources is always one tap away.
+	 */
+	val isPinned: Boolean
+		get() = this == EXPLORE
 }

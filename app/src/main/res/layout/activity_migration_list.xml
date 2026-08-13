@@ -68,4 +68,24 @@
 
 	</LinearLayout>
 
+	<!-- Blocking progress overlay shown while a migration is applying: clickable/focusable so it swallows
+	     touches, keeping the list uneditable until the migration finishes. -->
+	<FrameLayout
+		android:id="@+id/progressOverlay"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:background="#99000000"
+		android:clickable="true"
+		android:focusable="true"
+		android:visibility="gone"
+		tools:visibility="gone">
+
+		<com.google.android.material.progressindicator.CircularProgressIndicator
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_gravity="center"
+			android:indeterminate="true" />
+
+	</FrameLayout>
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

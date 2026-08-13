@@ -32,7 +32,7 @@
 	<PreferenceCategory android:title="@string/debug">
 
 		<SwitchPreferenceCompat
-			android:defaultValue="false"
+			android:defaultValue="true"
 			android:icon="@drawable/ic_info_outline"
 			android:key="debug_logging"
 			android:summary="@string/debug_logging_summary"

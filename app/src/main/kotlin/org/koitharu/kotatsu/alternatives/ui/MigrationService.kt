@@ -12,6 +12,7 @@ import androidx.core.content.ContextCompat
 import dagger.hilt.android.AndroidEntryPoint
 import org.koitharu.kotatsu.R
 import org.koitharu.kotatsu.alternatives.domain.BatchMigrateUseCase
+import org.koitharu.kotatsu.alternatives.domain.MigrationCoordinator
 import org.koitharu.kotatsu.core.ui.CoroutineIntentService
 import org.koitharu.kotatsu.core.util.ext.checkNotificationPermission
 import org.koitharu.kotatsu.core.util.ext.getDisplayMessage
@@ -36,6 +37,9 @@ class MigrationService : CoroutineIntentService() {
 	@Inject
 	lateinit var sourcesRepository: MangaSourcesRepository
 
+	@Inject
+	lateinit var migrationCoordinator: MigrationCoordinator
+
 	private lateinit var notificationManager: NotificationManagerCompat
 
 	override fun onCreate() {
@@ -48,23 +52,26 @@ class MigrationService : CoroutineIntentService() {
 		val sourceName = requireNotNull(intent.getStringExtra(DATA_SOURCE))
 		val copy = intent.getBooleanExtra(DATA_COPY, false)
 		val targetSource = sourcesRepository.allMangaSources.firstOrNull { it.name == sourceName } ?: return
-		startForeground(this)
-		var migrated = 0
-		for (mangaId in ids) {
-			powerManager.withPartialWakeLock(TAG) {
-				runCatchingCancellable {
-					batchMigrateUseCase(mangaId, targetSource, copy)
-				}.onSuccess { (_, match) ->
-					if (match != null) {
-						migrated++
+		// Marks a migration active so in-flight downloads pause until this batch finishes (avoids overheating).
+		migrationCoordinator.withMigration {
+			startForeground(this)
+			var migrated = 0
+			for (mangaId in ids) {
+				powerManager.withPartialWakeLock(TAG) {
+					runCatchingCancellable {
+						batchMigrateUseCase(mangaId, targetSource, copy)
+					}.onSuccess { (_, match) ->
+						if (match != null) {
+							migrated++
+						}
+					}.onFailure {
+						it.printStackTraceDebug()
 					}
-				}.onFailure {
-					it.printStackTraceDebug()
 				}
 			}
-		}
-		if (checkNotificationPermission(CHANNEL_ID)) {
-			notificationManager.notify(TAG, startId, buildSummaryNotification(migrated, ids.size))
+			if (checkNotificationPermission(CHANNEL_ID)) {
+				notificationManager.notify(TAG, startId, buildSummaryNotification(migrated, ids.size))
+			}
 		}
 	}
 

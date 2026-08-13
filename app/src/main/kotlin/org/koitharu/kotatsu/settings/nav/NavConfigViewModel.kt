@@ -69,6 +69,9 @@ class NavConfigViewModel @Inject constructor(
 	}
 
 	fun removeItem(item: NavItem) {
+		if (item.isPinned) {
+			return // Pinned sections (Explore) can't be removed — see NavItem.isPinned.
+		}
 		val newList = items.value.toMutableList()
 		newList.remove(item)
 		if (newList.isEmpty()) {

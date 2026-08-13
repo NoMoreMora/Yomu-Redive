@@ -3,6 +3,7 @@ package org.koitharu.kotatsu.settings.nav.adapter
 import android.annotation.SuppressLint
 import android.view.MotionEvent
 import android.view.View
+import androidx.core.view.isVisible
 import com.hannesdorfmann.adapterdelegates4.dsl.adapterDelegateViewBinding
 import org.koitharu.kotatsu.R
 import org.koitharu.kotatsu.core.prefs.NavItem
@@ -38,6 +39,8 @@ fun navConfigAD(
 			setCompoundDrawablesRelativeWithIntrinsicBounds(item.item.icon, 0, 0, 0)
 		}
 		binding.textViewHint.setTextAndVisible(item.disabledHintResId)
+		// Pinned sections (Explore) have no remove affordance — they can't be taken off the nav bar.
+		binding.imageViewRemove.isVisible = !item.item.isPinned
 	}
 }
 

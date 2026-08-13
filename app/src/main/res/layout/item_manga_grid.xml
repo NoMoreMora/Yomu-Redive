@@ -84,18 +84,6 @@
 				android:visibility="gone"
 				tools:visibility="visible" />
 
-			<!-- Pinned / downloaded markers stack under the badges rather than sharing the corner. -->
-			<org.koitharu.kotatsu.core.ui.widgets.IconsView
-				android:id="@+id/iconsView"
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				android:layout_marginTop="4dp"
-				android:background="@drawable/bg_list_icons"
-				android:orientation="horizontal"
-				android:padding="4dp"
-				app:iconSize="14dp"
-				app:iconSpacing="4dp" />
-
 		</LinearLayout>
 
 		<org.koitharu.kotatsu.history.ui.util.ReadingProgressView
@@ -133,6 +121,21 @@
 			style="?attr/mangaCoverTitleStyle"
 			tools:text="@tools:sample/lorem"
 			tools:visibility="visible" />
+
+		<!-- Downloaded / pinned markers: a compact icon strip in the bottom-end corner, kept clear of the
+		     favourite + new-chapter cluster (top-start) and the reading-progress ring (top-end) so nothing
+		     stacks on top of anything. Drawn last so it stays above the cover and the title scrim. -->
+		<org.koitharu.kotatsu.core.ui.widgets.IconsView
+			android:id="@+id/iconsView"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_gravity="bottom|end"
+			android:layout_margin="@dimen/card_indicator_offset"
+			android:background="@drawable/bg_list_icons_round"
+			android:orientation="horizontal"
+			android:padding="4dp"
+			app:iconSize="13dp"
+			app:iconSpacing="4dp" />
 
 	</FrameLayout>
 

@@ -81,31 +81,32 @@
 			android:layout_height="wrap_content"
 			android:layout_marginHorizontal="12dp"
 			app:layout_constrainedWidth="true"
-			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintEnd_toStartOf="@+id/button_search"
 			app:layout_constraintHorizontal_bias="0"
 			app:layout_constraintStart_toEndOf="@+id/imageView_cover"
 			app:layout_constraintTop_toBottomOf="@+id/textView_subtitle"
 			tools:text="Mangadex" />
 
+		<!-- Compact icon actions on their own bottom-end row so a long 2-line title above can run full width
+		     without colliding with them. Labels ("Search", "Migrate"/"Select") live on tooltips + content
+		     descriptions, set in AlternativeAD. -->
 		<com.google.android.material.button.MaterialButton
 			android:id="@+id/button_search"
-			style="@style/Widget.Material3.Button.OutlinedButton"
+			style="@style/Widget.Material3.Button.IconButton.Outlined"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
-			android:layout_marginEnd="12dp"
-			android:layout_marginBottom="4dp"
-			android:text="@string/search"
-			app:layout_constraintBottom_toTopOf="@id/button_migrate"
-			app:layout_constraintEnd_toEndOf="parent" />
+			app:icon="@drawable/ic_search"
+			app:layout_constraintBottom_toBottomOf="@id/button_migrate"
+			app:layout_constraintEnd_toStartOf="@id/button_migrate"
+			app:layout_constraintTop_toTopOf="@id/button_migrate" />
 
 		<com.google.android.material.button.MaterialButton
 			android:id="@+id/button_migrate"
-			style="?materialButtonTonalStyle"
+			style="@style/Widget.Material3.Button.IconButton.Filled.Tonal"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
-			android:layout_marginEnd="12dp"
-			android:layout_marginBottom="12dp"
-			android:text="@string/migrate"
+			android:layout_marginEnd="8dp"
+			android:layout_marginBottom="8dp"
 			app:icon="@drawable/ic_replace"
 			app:layout_constraintBottom_toBottomOf="parent"
 			app:layout_constraintEnd_toEndOf="parent" />

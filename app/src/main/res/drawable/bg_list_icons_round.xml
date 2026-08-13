@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Fully-rounded version of bg_list_icons for a free-floating card corner: a single glyph (e.g. the
+	on-device SD-card mark) reads as a round badge like the favourite mark and the progress ring, while
+	two glyphs (on-device + pinned) round off into a pill. Same floating surface colour as bg_list_icons.
+-->
+<shape
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:shape="rectangle">
+
+	<corners android:radius="999dp" />
+	<solid android:color="?colorBackgroundFloating" />
+</shape>

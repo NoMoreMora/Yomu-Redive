@@ -26,6 +26,7 @@ import org.koitharu.kotatsu.core.ui.list.OnListItemClickListener
 import org.koitharu.kotatsu.core.util.ext.enqueueWith
 import org.koitharu.kotatsu.core.util.ext.getQuantityStringSafe
 import org.koitharu.kotatsu.core.util.ext.mangaSourceExtra
+import org.koitharu.kotatsu.core.util.ext.setTooltipCompat
 import org.koitharu.kotatsu.databinding.ItemMangaAlternativeBinding
 import org.koitharu.kotatsu.list.ui.ListModelDiffCallback
 import org.koitharu.kotatsu.list.ui.model.ListModel
@@ -48,7 +49,12 @@ fun alternativeAD(
 	binding.buttonMigrate.setOnClickListener(clickListener)
 	binding.buttonSearch.setOnClickListener(clickListener)
 	binding.chipSource.setOnClickListener(clickListener)
-	binding.buttonMigrate.setText(migrateButtonTextRes)
+	// Icon-only buttons: the label lives on the tooltip + content description. The migrate action reads as
+	// "Migrate" in the migration flow but "Select" when picking an alternative, so it comes from the caller.
+	binding.buttonMigrate.contentDescription = context.getString(migrateButtonTextRes)
+	binding.buttonMigrate.setTooltipCompat(migrateButtonTextRes)
+	binding.buttonSearch.contentDescription = context.getString(R.string.search)
+	binding.buttonSearch.setTooltipCompat(R.string.search)
 
 	bind { payloads ->
 		binding.textViewTitle.text = item.mangaModel.title

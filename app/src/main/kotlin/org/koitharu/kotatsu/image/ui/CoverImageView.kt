@@ -10,9 +10,7 @@ import android.view.ViewTreeObserver.OnPreDrawListener
 import androidx.annotation.AttrRes
 import androidx.core.content.ContextCompat
 import androidx.core.content.withStyledAttributes
-import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.drawable.toDrawable
-import coil3.network.HttpException
 import coil3.request.ErrorResult
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
@@ -21,15 +19,10 @@ import coil3.size.Dimension
 import coil3.size.Size
 import coil3.size.ViewSizeResolver
 import kotlinx.coroutines.suspendCancellableCoroutine
-import okio.FileNotFoundException
-import org.jsoup.HttpStatusException
 import org.koitharu.kotatsu.R
 import org.koitharu.kotatsu.bookmarks.domain.Bookmark
-import org.koitharu.kotatsu.core.exceptions.CloudFlareProtectedException
-import org.koitharu.kotatsu.core.exceptions.UnsupportedSourceException
 import org.koitharu.kotatsu.core.image.CoilImageView
 import org.koitharu.kotatsu.core.ui.image.AnimatedPlaceholderDrawable
-import org.koitharu.kotatsu.core.ui.image.TextDrawable
 import org.koitharu.kotatsu.core.ui.image.TrimTransformation
 import org.koitharu.kotatsu.core.util.ext.bookmarkExtra
 import org.koitharu.kotatsu.core.util.ext.coverCacheExtra
@@ -40,15 +33,11 @@ import org.koitharu.kotatsu.core.util.ext.isNetworkError
 import org.koitharu.kotatsu.core.util.ext.mangaExtra
 import org.koitharu.kotatsu.core.util.ext.mangaSourceExtra
 import org.koitharu.kotatsu.favourites.domain.model.Cover
-import org.koitharu.kotatsu.parsers.exception.ContentUnavailableException
-import org.koitharu.kotatsu.parsers.exception.ParseException
-import org.koitharu.kotatsu.parsers.exception.TooManyRequestExceptions
 import org.koitharu.kotatsu.parsers.model.Manga
 import org.koitharu.kotatsu.parsers.model.MangaPage
 import org.koitharu.kotatsu.parsers.model.MangaSource
 import org.koitharu.kotatsu.reader.ui.pager.ReaderPage
 import kotlin.coroutines.resume
-import androidx.appcompat.R as appcompatR
 import com.google.android.material.R as materialR
 
 class CoverImageView @JvmOverloads constructor(
@@ -74,11 +63,9 @@ class CoverImageView @JvmOverloads constructor(
 			placeholderDrawable = AnimatedPlaceholderDrawable(context)
 		}
 		if (errorDrawable == null) {
-			errorDrawable = ColorUtils.blendARGB(
-				context.getThemeColor(materialR.attr.colorErrorContainer),
-				context.getThemeColor(appcompatR.attr.colorBackgroundFloating),
-				0.25f,
-			).toDrawable()
+			// A failed or missing cover shows a neutral "no cover" tile rather than an alarming red error box
+			// (the real failure reason is still logged); the glyph is added in ErrorForegroundListener.onError.
+			errorDrawable = context.getThemeColor(materialR.attr.colorSurfaceContainer).toDrawable()
 		}
 		if (fallbackDrawable == null) {
 			fallbackDrawable = context.getThemeColor(materialR.attr.colorSurfaceContainer).toDrawable()
@@ -194,31 +181,19 @@ class CoverImageView @JvmOverloads constructor(
 
 		override fun onError(request: ImageRequest, result: ErrorResult) {
 			super.onError(request, result)
-			foreground = if (result.throwable.isNetworkError() && !networkState.isOnline()) {
-				ContextCompat.getDrawable(context, R.drawable.ic_offline)?.let {
-					LayerDrawable(arrayOf(it)).apply {
-						setLayerGravity(0, Gravity.CENTER)
-						setTint(ContextCompat.getColor(context, R.color.dim_lite))
-					}
-				}
+			// Offline keeps its own glyph; anything else (404, missing image, parse error, …) reads as a
+			// neutral "no cover" tile instead of a stark error code. The specific cause is still logged.
+			val iconRes = if (result.throwable.isNetworkError() && !networkState.isOnline()) {
+				R.drawable.ic_offline
 			} else {
-				result.throwable.getShortMessage()?.let { text ->
-					TextDrawable.create(context, text, materialR.attr.textAppearanceTitleSmall)
+				R.drawable.ic_no_cover
+			}
+			foreground = ContextCompat.getDrawable(context, iconRes)?.let {
+				LayerDrawable(arrayOf(it)).apply {
+					setLayerGravity(0, Gravity.CENTER)
+					setTint(ContextCompat.getColor(context, R.color.dim_lite))
 				}
 			}
-		}
-
-		private fun Throwable.getShortMessage(): String? = when (this) {
-			is HttpException -> response.code.toString()
-			is HttpStatusException -> statusCode.toString()
-			is ContentUnavailableException,
-			is FileNotFoundException -> "404"
-
-			is TooManyRequestExceptions -> "429"
-			is ParseException -> "</>"
-			is UnsupportedSourceException -> "X"
-			is CloudFlareProtectedException -> "?"
-			else -> cause?.getShortMessage()
 		}
 	}
 

@@ -44,6 +44,7 @@ import okio.buffer
 import okio.sink
 import okio.use
 import org.koitharu.kotatsu.R
+import org.koitharu.kotatsu.alternatives.domain.MigrationCoordinator
 import org.koitharu.kotatsu.core.image.BitmapDecoderCompat
 import org.koitharu.kotatsu.core.model.ids
 import org.koitharu.kotatsu.core.model.isLocal
@@ -114,6 +115,7 @@ class DownloadWorker @AssistedInject constructor(
 	@LocalStorageChanges private val localStorageChanges: MutableSharedFlow<LocalManga?>,
 	private val slowdownDispatcher: DownloadSlowdownDispatcher,
 	private val imageProxyInterceptor: ImageProxyInterceptor,
+	private val migrationCoordinator: MigrationCoordinator,
 	notificationFactoryFactory: DownloadNotificationFactory.Factory,
 ) : CoroutineWorker(appContext, params) {
 
@@ -358,6 +360,16 @@ class DownloadWorker @AssistedInject constructor(
 			publishState(currentState.copy(isPaused = true, eta = -1L, isStuck = false))
 			try {
 				pausingHandle.awaitResumed()
+			} finally {
+				publishState(currentState.copy(isPaused = false))
+			}
+		}
+		// Step aside while a manga migration is running, so downloads and migration don't fight for CPU and
+		// network (which overheats the device). Resumes automatically once the migration finishes.
+		if (migrationCoordinator.isActive) {
+			publishState(currentState.copy(isPaused = true, eta = -1L, isStuck = false))
+			try {
+				migrationCoordinator.awaitIdle()
 			} finally {
 				publishState(currentState.copy(isPaused = false))
 			}
