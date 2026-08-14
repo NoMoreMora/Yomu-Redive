@@ -36,15 +36,22 @@
 				android:text="@string/sort_order"
 				android:textAppearance="?textAppearanceTitleSmall" />
 
-			<org.koitharu.kotatsu.core.ui.widgets.ChipsView
-				android:id="@+id/chips_sort"
+			<com.google.android.material.card.MaterialCardView
+				android:id="@+id/card_order"
+				style="?materialCardViewOutlinedStyle"
 				android:layout_width="match_parent"
 				android:layout_height="wrap_content"
-				android:layout_marginHorizontal="@dimen/margin_normal"
-				android:layout_marginTop="@dimen/margin_small"
-				app:chipStyle="@style/Widget.Kotatsu.Chip.Filter"
-				app:selectionRequired="false"
-				app:singleSelection="false" />
+				android:layout_marginHorizontal="16dp"
+				android:layout_marginTop="@dimen/margin_small">
+
+				<Spinner
+					android:id="@+id/spinner_order"
+					android:layout_width="match_parent"
+					android:layout_height="56dp"
+					android:minHeight="?listPreferredItemHeightSmall"
+					android:paddingHorizontal="8dp" />
+
+			</com.google.android.material.card.MaterialCardView>
 
 			<TextView
 				android:id="@+id/title_flags"
@@ -55,15 +62,12 @@
 				android:text="@string/filter"
 				android:textAppearance="?textAppearanceTitleSmall" />
 
-			<org.koitharu.kotatsu.core.ui.widgets.ChipsView
-				android:id="@+id/chips_flags"
+			<LinearLayout
+				android:id="@+id/container_flags"
 				android:layout_width="match_parent"
 				android:layout_height="wrap_content"
-				android:layout_marginHorizontal="@dimen/margin_normal"
 				android:layout_marginTop="@dimen/margin_small"
-				app:chipStyle="@style/Widget.Kotatsu.Chip.Filter"
-				app:selectionRequired="false"
-				app:singleSelection="false" />
+				android:orientation="vertical" />
 
 			<TextView
 				android:id="@+id/title_types"
@@ -76,16 +80,13 @@
 				android:visibility="gone"
 				tools:visibility="visible" />
 
-			<org.koitharu.kotatsu.core.ui.widgets.ChipsView
-				android:id="@+id/chips_types"
+			<LinearLayout
+				android:id="@+id/container_types"
 				android:layout_width="match_parent"
 				android:layout_height="wrap_content"
-				android:layout_marginHorizontal="@dimen/margin_normal"
 				android:layout_marginTop="@dimen/margin_small"
+				android:orientation="vertical"
 				android:visibility="gone"
-				app:chipStyle="@style/Widget.Kotatsu.Chip.Filter"
-				app:selectionRequired="false"
-				app:singleSelection="false"
 				tools:visibility="visible" />
 
 			<TextView
@@ -99,17 +100,40 @@
 				android:visibility="gone"
 				tools:visibility="visible" />
 
-			<org.koitharu.kotatsu.core.ui.widgets.ChipsView
-				android:id="@+id/chips_genres"
+			<LinearLayout
+				android:id="@+id/row_genres"
 				android:layout_width="match_parent"
 				android:layout_height="wrap_content"
-				android:layout_marginHorizontal="@dimen/margin_normal"
 				android:layout_marginTop="@dimen/margin_small"
+				android:background="?selectableItemBackground"
+				android:clickable="true"
+				android:focusable="true"
+				android:gravity="center_vertical"
+				android:minHeight="?android:listPreferredItemHeightSmall"
+				android:orientation="horizontal"
+				android:paddingStart="?android:listPreferredItemPaddingStart"
+				android:paddingEnd="?android:listPreferredItemPaddingEnd"
 				android:visibility="gone"
-				app:chipStyle="@style/Widget.Kotatsu.Chip.Filter"
-				app:selectionRequired="false"
-				app:singleSelection="false"
-				tools:visibility="visible" />
+				tools:visibility="visible">
+
+				<TextView
+					android:id="@+id/text_genres_summary"
+					android:layout_width="0dp"
+					android:layout_height="wrap_content"
+					android:layout_weight="1"
+					android:ellipsize="end"
+					android:singleLine="true"
+					android:textAppearance="?attr/textAppearanceListItem"
+					android:textColor="?colorOnSurfaceVariant"
+					tools:text="@string/any" />
+
+				<ImageView
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:contentDescription="@null"
+					android:src="@drawable/ic_chevron_end" />
+
+			</LinearLayout>
 
 			<TextView
 				android:id="@+id/title_sources"
@@ -122,17 +146,40 @@
 				android:visibility="gone"
 				tools:visibility="visible" />
 
-			<org.koitharu.kotatsu.core.ui.widgets.ChipsView
-				android:id="@+id/chips_sources"
+			<LinearLayout
+				android:id="@+id/row_sources"
 				android:layout_width="match_parent"
 				android:layout_height="wrap_content"
-				android:layout_marginHorizontal="@dimen/margin_normal"
 				android:layout_marginTop="@dimen/margin_small"
+				android:background="?selectableItemBackground"
+				android:clickable="true"
+				android:focusable="true"
+				android:gravity="center_vertical"
+				android:minHeight="?android:listPreferredItemHeightSmall"
+				android:orientation="horizontal"
+				android:paddingStart="?android:listPreferredItemPaddingStart"
+				android:paddingEnd="?android:listPreferredItemPaddingEnd"
 				android:visibility="gone"
-				app:chipStyle="@style/Widget.Kotatsu.Chip.Filter"
-				app:selectionRequired="false"
-				app:singleSelection="false"
-				tools:visibility="visible" />
+				tools:visibility="visible">
+
+				<TextView
+					android:id="@+id/text_sources_summary"
+					android:layout_width="0dp"
+					android:layout_height="wrap_content"
+					android:layout_weight="1"
+					android:ellipsize="end"
+					android:singleLine="true"
+					android:textAppearance="?attr/textAppearanceListItem"
+					android:textColor="?colorOnSurfaceVariant"
+					tools:text="@string/all" />
+
+				<ImageView
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:contentDescription="@null"
+					android:src="@drawable/ic_chevron_end" />
+
+			</LinearLayout>
 
 		</LinearLayout>
 	</androidx.core.widget.NestedScrollView>

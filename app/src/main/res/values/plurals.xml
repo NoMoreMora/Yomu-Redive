@@ -44,4 +44,8 @@
 		<item quantity="one">%1$d source</item>
 		<item quantity="other">%1$d sources</item>
 	</plurals>
+	<plurals name="selected_count">
+		<item quantity="one">%1$d selected</item>
+		<item quantity="other">%1$d selected</item>
+	</plurals>
 </resources>

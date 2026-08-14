@@ -68,6 +68,7 @@ import org.koitharu.kotatsu.download.ui.dialog.DownloadDialogFragment
 import org.koitharu.kotatsu.download.ui.list.DownloadsActivity
 import org.koitharu.kotatsu.favourites.ui.FavouritesActivity
 import org.koitharu.kotatsu.favourites.ui.categories.FavouriteCategoriesActivity
+import org.koitharu.kotatsu.favourites.ui.list.filter.FavoritesFilterPickerSheet
 import org.koitharu.kotatsu.favourites.ui.list.filter.FavoritesFilterSortSheet
 import org.koitharu.kotatsu.favourites.ui.categories.edit.FavouritesCategoryEditActivity
 import org.koitharu.kotatsu.favourites.ui.categories.select.FavoriteDialog
@@ -530,6 +531,13 @@ class AppRouter private constructor(
     fun showFavoritesFilterSheet(categoryId: Long) {
         FavoritesFilterSortSheet().withArgs(1) {
             putLong(KEY_ID, categoryId)
+        }.showDistinct()
+    }
+
+    fun showFavoritesFilterPickerSheet(categoryId: Long, kind: FavoritesFilterPickerSheet.Kind) {
+        FavoritesFilterPickerSheet().withArgs(2) {
+            putLong(KEY_ID, categoryId)
+            putInt(KEY_KIND, kind.ordinal)
         }.showDistinct()
     }
 
