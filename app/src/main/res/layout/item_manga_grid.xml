@@ -27,8 +27,7 @@
 			tools:ignore="ContentDescription"
 			tools:src="@tools:sample/backgrounds/scenic[5]" />
 
-		<!-- New-chapter count and favourite mark sit together at the top-left, opposite the reading
-		     progress ring. Both are "what is going on with this title" rather than "where am I in it". -->
+		<!-- Favourite mark at the top-left, opposite the reading progress ring. -->
 		<LinearLayout
 			android:id="@+id/layout_indicators"
 			android:layout_width="wrap_content"
@@ -42,16 +41,6 @@
 				android:layout_height="wrap_content"
 				android:gravity="center_vertical"
 				android:orientation="horizontal">
-
-			<org.koitharu.kotatsu.core.ui.widgets.BadgeView
-				android:id="@+id/badge"
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				android:layout_marginEnd="4dp"
-				android:visibility="gone"
-				app:maxCharacterCount="@integer/manga_badge_max_character_count"
-				tools:number="8"
-				tools:visibility="visible" />
 
 			<ImageView
 				android:id="@+id/imageView_favourite"
